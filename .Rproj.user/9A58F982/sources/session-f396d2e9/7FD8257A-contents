@@ -1,0 +1,12 @@
+---
+title: "Quarto_con_el_analisis"
+format: html
+editor: visual
+---
+
+```{r}
+datos_internet <- read.csv("../data/archivo.csv")
+datos_paises <- read.csv("../data/archivo_paises.csv")
+
+
+```
