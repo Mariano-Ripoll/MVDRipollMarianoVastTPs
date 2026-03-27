@@ -1,0 +1,5 @@
+"0","normalizar_nombres<-function(df)"
+"0","  nombres<-names(df)"
+"0","  nombres<-tolower(nombres)"
+"2","Error: object 'nombres' not found
+"
