@@ -4,25 +4,34 @@ format: html
 editor: visual
 ---
 
-```{# El presente trabajo busca validar la hipotesis dada:}
+```{r}
+# El presente trabajo busca validar la hipotesis dada:}
 # "En la última década (2013-2023), las regiones compuestas por países de ingresos bajos (Low income y Lower middle income) han mostrado una tasa de crecimiento porcentual en el acceso a internet superior a la de las regiones de ingresos altos (Upper middle income y High Income), aunque su penetración absoluta siga siendo significativamente  menor."
 
 # Se trabaja con bases de datos del Banco Mundial(actualizadas as of 2026) orientadas al porcentaje de personas que hicieron uso del internte por país y año. Así como con metadatos sobre los países respecto de su región, ingreso, "nombre en la tabla" y "comentarios especiales".
 
 ```
 
-```{Librerías}
+```{r}
+#install.packages("tidyverse")
+#install.packages("janitor")
+# install.packages("stringi")
+
 library(tidyverse)
 library(janitor) 
 library(stringi)
 ```
 
 ```{r}
-{r}
+
 # CARGAR DATOS
-internet_raw <- cargar_datos("../data/archivo.csv", skip = 4)
-# La base de datos sobre indicadores de internet tien líneas iniciales previas a la tabla de metadatos, por eso el skip. 
-metadata_raw <- cargar_datos("../data/archivo_paises.csv")
+ruta_internet = "../data/archivo.csv"
+ruta_metadata = "../data/archivo_paises.csv"
+
+
+internet_raw = read_csv(ruta_internet, skip = 4, show_col_types = FALSE)# La base de datos sobre indicadores de internet tien líneas iniciales previas a la tabla de metadatos, por eso el skip. 
+
+metadata_raw = read_csv(ruta_metadata, show_col_types = FALSE)
 ```
 
 ```{r}
@@ -50,9 +59,10 @@ normalizar_df = function(dataframe, clean = TRUE, which_remove = "cols")
 
 ```
 
-```{# LLamadO a las funciones de limpieza:}
-internet = normalize_dataframe(internet_raw, which_remove = "cols")
-metadata = normalize_dataframe(metadata_raw, which_remove = "cols")
+```{r}
+# LLamadO a las funciones de limpieza:
+internet = normalizar_df(internet_raw, which_remove = "cols")
+metadata = normalizar_df(metadata_raw, which_remove = "cols")
 
 # Breve inspección: 
 glimpse(internet)
@@ -64,19 +74,19 @@ glimpse(metadata)
 # Internet esta en formato wide (años aparecen como una columna distintas)
 # Lo que se busca en el codigo de aca es pasarlo a formato largo para que tenga algún sentido de sencillez analizar la evolución temporal.
 
-internet_long<- internet|> 
+internet_long <- internet |>
   pivot_longer(
-    cols = "1960":"2025",
+    cols = -c(country_name, country_code, indicator_name, indicator_code),
     names_to = "year",
-    values_to= "internet_users_pct"
+    values_to = "internet_users_pct"
   )
-
 # Me aseguro que el año este en formato numerico y filtro circunscribiendo al periodo de la hipotesis (ante la duda incluí ambos años 2013 y 2023 inclusive)
 
-internet_long = internet_long |> 
+internet_long <- internet_long |>
   mutate(
+    year = gsub("[^0-9]", "", year),
     year = as.integer(year)
-  ) |> 
+  ) |>
   filter(
     year >= 2013,
     year <= 2023
@@ -117,11 +127,7 @@ internet_long = internet_long|>
 # Transformar base países
 
 metadata = metadata |> 
-  select(country_code, region, incomegroup, tablename) |> 
-  rename(
-    income_group = incomegroup,
-    table_name = tablename
-  )
+  select(country_code, region, income_group, table_name)
 
 head(metadata)
 
@@ -138,3 +144,11 @@ head(base_unida)
 glimpse(base_unida)
 
 ```
+
+
+
+
+
+
+
+
