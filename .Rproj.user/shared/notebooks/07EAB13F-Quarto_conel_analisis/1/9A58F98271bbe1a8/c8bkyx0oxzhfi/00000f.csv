@@ -1,0 +1,5 @@
+"0","#INTERPRETACIÖN DE LOS RESULTADOS/ conclusión"
+"0","# Primero observo los niveles absolutos de crecimiento al principio y final del periodo de la hipotesis "
+"0",""
+"0","resultado_hipotesis |> "
+"0","  filter(year == 2013 | year == 2023)"

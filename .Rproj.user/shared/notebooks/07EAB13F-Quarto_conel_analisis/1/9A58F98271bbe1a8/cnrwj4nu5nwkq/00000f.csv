@@ -1,0 +1,4 @@
+"0","# Resto de la limpieza: hay observaciones sin clasificación de grupos de ingresos; tienden a corresponderse con categorías que no tienen injerencia para analizar las hipotesis; ergo, los quito. "
+"0",""
+"0","base_limpia = base_unida |> "
+"0","  filter(!is.na(income_group))"

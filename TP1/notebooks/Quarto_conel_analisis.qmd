@@ -4,25 +4,34 @@ format: html
 editor: visual
 ---
 
-```{# El presente trabajo busca validar la hipotesis dada:}
+```{r}
+# El presente trabajo busca validar la hipotesis dada:}
 # "En la última década (2013-2023), las regiones compuestas por países de ingresos bajos (Low income y Lower middle income) han mostrado una tasa de crecimiento porcentual en el acceso a internet superior a la de las regiones de ingresos altos (Upper middle income y High Income), aunque su penetración absoluta siga siendo significativamente  menor."
 
 # Se trabaja con bases de datos del Banco Mundial(actualizadas as of 2026) orientadas al porcentaje de personas que hicieron uso del internte por país y año. Así como con metadatos sobre los países respecto de su región, ingreso, "nombre en la tabla" y "comentarios especiales".
 
 ```
 
-```{Librerías}
+```{r}
+#install.packages("tidyverse")
+#install.packages("janitor")
+# install.packages("stringi")
+
 library(tidyverse)
 library(janitor) 
 library(stringi)
 ```
 
 ```{r}
-{r}
+
 # CARGAR DATOS
-internet_raw <- cargar_datos("../data/archivo.csv", skip = 4)
-# La base de datos sobre indicadores de internet tien líneas iniciales previas a la tabla de metadatos, por eso el skip. 
-metadata_raw <- cargar_datos("../data/archivo_paises.csv")
+ruta_internet = "../data/archivo.csv"
+ruta_metadata = "../data/archivo_paises.csv"
+
+
+internet_raw = read_csv(ruta_internet, skip = 4, show_col_types = FALSE)# La base de datos sobre indicadores de internet tien líneas iniciales previas a la tabla de metadatos, por eso el skip. 
+
+metadata_raw = read_csv(ruta_metadata, show_col_types = FALSE)
 ```
 
 ```{r}
@@ -50,9 +59,10 @@ normalizar_df = function(dataframe, clean = TRUE, which_remove = "cols")
 
 ```
 
-```{# LLamadO a las funciones de limpieza:}
-internet = normalize_dataframe(internet_raw, which_remove = "cols")
-metadata = normalize_dataframe(metadata_raw, which_remove = "cols")
+```{r}
+# LLamadO a las funciones de limpieza:
+internet = normalizar_df(internet_raw, which_remove = "cols")
+metadata = normalizar_df(metadata_raw, which_remove = "cols")
 
 # Breve inspección: 
 glimpse(internet)
@@ -64,19 +74,19 @@ glimpse(metadata)
 # Internet esta en formato wide (años aparecen como una columna distintas)
 # Lo que se busca en el codigo de aca es pasarlo a formato largo para que tenga algún sentido de sencillez analizar la evolución temporal.
 
-internet_long<- internet|> 
+internet_long <- internet |>
   pivot_longer(
-    cols = "1960":"2025",
+    cols = -c(country_name, country_code, indicator_name, indicator_code),
     names_to = "year",
-    values_to= "internet_users_pct"
+    values_to = "internet_users_pct"
   )
-
 # Me aseguro que el año este en formato numerico y filtro circunscribiendo al periodo de la hipotesis (ante la duda incluí ambos años 2013 y 2023 inclusive)
 
-internet_long = internet_long |> 
+internet_long <- internet_long |>
   mutate(
+    year = gsub("[^0-9]", "", year),
     year = as.integer(year)
-  ) |> 
+  ) |>
   filter(
     year >= 2013,
     year <= 2023
@@ -117,11 +127,7 @@ internet_long = internet_long|>
 # Transformar base países
 
 metadata = metadata |> 
-  select(country_code, region, incomegroup, tablename) |> 
-  rename(
-    income_group = incomegroup,
-    table_name = tablename
-  )
+  select(country_code, region, income_group, table_name)
 
 head(metadata)
 
@@ -138,3 +144,125 @@ head(base_unida)
 glimpse(base_unida)
 
 ```
+
+```{r}
+# Resto de la limpieza: hay observaciones sin clasificación de grupos de ingresos; tienden a corresponderse con categorías que no tienen injerencia para analizar las hipotesis; ergo, los quito. 
+
+base_limpia = base_unida |> 
+  filter(!is.na(income_group))
+```
+
+```{r}
+#Reordenar los datos; se factorizan ordenadamente por income_group
+base_limpia = base_limpia |> 
+  mutate(
+    income_group = factor(
+      income_group,
+      levels = c(
+        "Low income",
+        "Lower middle income",
+        "Upper middle income",
+        "High income"
+      ),
+      ordered = TRUE
+    )
+  )
+levels(base_limpia$income_group)
+
+```
+
+
+```{r}
+#Agregado por región y año (se crea una tabla nueva)
+tabla_region_anio = base_limpia |> 
+  group_by(region, year) |> 
+  summarise(
+    promedio_internet = mean(internet_users_pct, na.rm = TRUE),
+    cantidad_paises = n(),
+    .groups = "drop"
+  )
+
+#Agregado por clasificación de ingresos y año
+tabla_income_anio = base_limpia |> 
+  group_by(income_group, year) |> 
+  summarise(
+    promedio_internet = mean(internet_users_pct, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+```
+
+
+```{r}
+# Orientación a Formato Ancho de la tabla
+#Así es acorde a la tabla presentada en las consignas
+resultado_hipotesis = tabla_income_anio |> 
+  pivot_wider(
+    names_from = income_group,
+    values_from = promedio_internet
+  ) |> 
+  mutate(
+    indicator_name = "Individuals using the Internet (% of population)"
+  ) |> 
+  arrange(year)
+
+#Orden jerarquico de columnas:
+jerarquia = c(
+  "year",
+  "Low income",
+  "Lower middle income",
+  "Upper middle income",
+  "High income",
+  "indicator_name"
+)
+
+resultado_hipotesis = resultado_hipotesis |> 
+  select(all_of(jerarquia))
+
+resultado_hipotesis
+
+```
+
+
+```{r}
+#Analisis del crecimiento para la decada (2013-2023_)
+# Para no solo quedarse con los niveles absolutos, se construye una tabla tambien con el crecimiento porcentual de cada grupo
+
+crecimiento_2013_2023 = tabla_income_anio |> 
+  filter(year == 2013 | year == 2023) |> 
+  pivot_wider(
+    names_from = year,
+    values_from = promedio_internet
+  ) |> 
+  mutate(
+    crecimiento_absoluto = `2023` - `2013`,
+    crecimiento_porcentual = ((`2023` - `2013`) / `2013`) * 100
+  ) |> 
+  arrange(income_group)
+
+crecimiento_2013_2023
+```
+
+
+```{r}
+#INTERPRETACIÖN DE LOS RESULTADOS/ conclusión
+# Primero observo los niveles absolutos de crecimiento al principio y final del periodo de la hipotesis 
+
+resultado_hipotesis |> 
+  filter(year == 2013 | year == 2023)
+
+# Parte de la lógica (según entiendo) es que: Si los grupos Low income y Lower middle income presentan un crecimiento porcentual mayor que Upper middle income y High income, entonces se ve respaldada la primera parte de la hipótesis. Si, asimismo, en 2023 sus valores absolutos siguen siendo menores, entonces quedaría tambien respaldada la segunda parte de la hipótesis.
+
+
+#Entonces, dado que entre 2013 y 2023, los grupos de menores ingresos fueron los que más crecieron en términos porcentuales: low income +323.46% y lower middle income +209.87%, frente a +107.65% en upper middle income y +24.78% en high income;la primera parte de la hipótesis se cumple.
+
+#  Pero, claramente, la brecha persistió: En 2023, los países de low income alcanzaron un promedio de 24.17% y los de Lower middle income de 56.71%, todavía por debajo de upper middle income (79.20%) y high income (91.63%). Consescuentemente, verificandose tambien la segunda parte de la hipótesis: aunque los países de menores ingresos crecieron más rápido, su nivel de penetración siguió siendo significativamente menor.
+
+
+#Hay, por ende, clara evidencia hacia la importancia de path dependence en el ambito. 
+
+#Export a output: 
+write_csv(resultado_hipotesis, "../output/resultado_hipotesis.csv")
+
+
+

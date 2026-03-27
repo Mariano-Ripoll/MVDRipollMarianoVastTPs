@@ -251,7 +251,7 @@ crecimiento_2013_2023
 resultado_hipotesis |> 
   filter(year == 2013 | year == 2023)
 
-# Parte de la lógica es que: Si los grupos Low income y Lower middle income presentan un crecimiento porcentual mayor que Upper middle income y High income, entonces se ve respaldada la primera parte de la hipótesis. Si, asimismo, en 2023 sus valores absolutos siguen siendo menores, entonces quedaría tambien respaldada la segunda parte de la hipótesis.
+# Parte de la lógica (según entiendo) es que: Si los grupos Low income y Lower middle income presentan un crecimiento porcentual mayor que Upper middle income y High income, entonces se ve respaldada la primera parte de la hipótesis. Si, asimismo, en 2023 sus valores absolutos siguen siendo menores, entonces quedaría tambien respaldada la segunda parte de la hipótesis.
 
 
 #Entonces, dado que entre 2013 y 2023, los grupos de menores ingresos fueron los que más crecieron en términos porcentuales: low income +323.46% y lower middle income +209.87%, frente a +107.65% en upper middle income y +24.78% en high income;la primera parte de la hipótesis se cumple.
@@ -263,3 +263,11 @@ resultado_hipotesis |>
 
 #Export a output: 
 write_csv(resultado_hipotesis, "../output/resultado_hipotesis.csv")
+```
+
+
+
+
+
+
+
