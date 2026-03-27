@@ -1,0 +1,6 @@
+"0","library(tidyverse)
+library(janitor) 
+library(stringi)"
+"2","'""Librer¡as""' is not recognized as an internal or external command,
+operable program or batch file.
+"

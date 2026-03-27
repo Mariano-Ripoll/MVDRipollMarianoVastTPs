@@ -3,7 +3,7 @@
     "path": "~/GitHub/MVDRipollMarianoVastTPs/TP1/notebooks/Quarto_conel_analisis.qmd",
     "project_path": "TP1/notebooks/Quarto_conel_analisis.qmd",
     "type": "quarto_markdown",
-    "hash": "994591610",
+    "hash": "0",
     "contents": "",
     "dirty": true,
     "created": 1774481919014.0,
@@ -19,14 +19,14 @@
         "scrollLine": "0",
         "docOutlineVisible": "1",
         "rmdVisualCollapsedChunks": "",
-        "rmdVisualModeLocation": "2245:1203"
+        "rmdVisualModeLocation": "4213:2045"
     },
     "folds": "",
     "lastKnownWriteTime": 1774556204,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1774582692325,
+    "last_content_update": 1774642699335,
     "read_only": false,
     "read_only_alternatives": []
 }
