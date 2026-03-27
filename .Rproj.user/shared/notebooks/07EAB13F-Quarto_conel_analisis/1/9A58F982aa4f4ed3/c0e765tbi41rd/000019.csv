@@ -1,1 +1,6 @@
+"0","# Transformar base países"
 "0",""
+"0","metadata = metadata |> "
+"0","  select(country_code, region, income_group, table_name)"
+"0",""
+"0","head(metadata)"

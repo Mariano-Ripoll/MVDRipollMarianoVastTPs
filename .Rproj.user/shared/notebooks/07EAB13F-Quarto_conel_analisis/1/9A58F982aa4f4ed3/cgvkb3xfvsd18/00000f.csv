@@ -1,7 +1,0 @@
-"0","# UNIR BASES DE DATOS"
-"0","# Se unen pivoteando por country_code que es el clave común entre la tabla de indicadores de internet y metada (archivo de paises. )"
-"0",""
-"0","base_unida = internet_long |>"
-"0","  left_join(metadata, by = ""country_code"")"
-"0",""
-"0","head(base_unida)"
