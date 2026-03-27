@@ -4,9 +4,137 @@ format: html
 editor: visual
 ---
 
-```{r}
-datos_internet <- read.csv("../data/archivo.csv")
-datos_paises <- read.csv("../data/archivo_paises.csv")
+```{# El presente trabajo busca validar la hipotesis dada:}
+# "En la última década (2013-2023), las regiones compuestas por países de ingresos bajos (Low income y Lower middle income) han mostrado una tasa de crecimiento porcentual en el acceso a internet superior a la de las regiones de ingresos altos (Upper middle income y High Income), aunque su penetración absoluta siga siendo significativamente  menor."
 
+# Se trabaja con bases de datos del Banco Mundial(actualizadas as of 2026) orientadas al porcentaje de personas que hicieron uso del internte por país y año. Así como con metadatos sobre los países respecto de su región, ingreso, "nombre en la tabla" y "comentarios especiales".
+
+```
+
+```{Librerías}
+library(tidyverse)
+library(janitor) 
+library(stringi)
+```
+
+```{r}
+{r}
+# CARGAR DATOS
+internet_raw <- cargar_datos("../data/archivo.csv", skip = 4)
+# La base de datos sobre indicadores de internet tien líneas iniciales previas a la tabla de metadatos, por eso el skip. 
+metadata_raw <- cargar_datos("../data/archivo_paises.csv")
+```
+
+```{r}
+#Para limpiar el df buscamos homogeneizar y estandarizar los valores para cada variable de modo que distintas funciones o analisis estadisticos puedan considerar a todas iguales. Asimismo, es necesario a nivel teórico para no desvirtuar la información por medio de contenido erroneo/redundante/inecesario o simplemente no interpretable.
+    
+    
+normalizar_df = function(dataframe, clean = TRUE, which_remove = "cols") 
+  # En esta primera parte de la función buscamos normalizar lo que serían los nombres de columnas y sus posibles espacios o caracteres especiales. 
+  {if (clean) {
+    data_clean = clean_names(dataframe) 
+  } else {
+    data_clean = dataframe}
+  
+  # Aquí, en cambio, buscamos limpiar respecto de valores faltantes o columnas vacías/sin nombrar.
+  
+  if (which_remove == "both") 
+  { data_clean = data_clean |> 
+    janitor::remove_empty(which = 'cols') |> 
+    janitor::remove_empty(which = 'rows') } 
+  else { 
+    data_clean = janitor::remove_empty(data_clean, which = which_remove) 
+  }
+  return(data_clean)
+  }
+
+```
+
+```{# LLamadO a las funciones de limpieza:}
+internet = normalize_dataframe(internet_raw, which_remove = "cols")
+metadata = normalize_dataframe(metadata_raw, which_remove = "cols")
+
+# Breve inspección: 
+glimpse(internet)
+glimpse(metadata)
+```
+
+```{r}
+# Transformar base internet
+# Internet esta en formato wide (años aparecen como una columna distintas)
+# Lo que se busca en el codigo de aca es pasarlo a formato largo para que tenga algún sentido de sencillez analizar la evolución temporal.
+
+internet_long<- internet|> 
+  pivot_longer(
+    cols = "1960":"2025",
+    names_to = "year",
+    values_to= "internet_users_pct"
+  )
+
+# Me aseguro que el año este en formato numerico y filtro circunscribiendo al periodo de la hipotesis (ante la duda incluí ambos años 2013 y 2023 inclusive)
+
+internet_long = internet_long |> 
+  mutate(
+    year = as.integer(year)
+  ) |> 
+  filter(
+    year >= 2013,
+    year <= 2023
+  )
+
+#Exploración: 
+
+head(internet_long)
+glimpse(internet_long)
+
+```
+
+```{r}
+# ARREGLO ADICIONAL DE MISSING VALUES
+# Dado que algunos NA de la tabla se expresan como "..", convierto estos a NA. 
+
+internet_long = internet_long |>
+  mutate(
+    internet_users_pct=ifelse(internet_users_pct == "..", NA, internet_users_pct),
+    internet_users_pct=as.numeric(internet_users_pct)
+  )
+
+# Hago check de faltantes, si son pocos lo puedo eliminarlos sin afectar relevantemente el resultado en términos teóricos. 
+
+n_missing=sum(is.na(internet_long$internet_users_pct))
+print(n_missing)
+
+#Si son pocos: 
+
+internet_long = internet_long|>
+  filter(!is.na(internet_users_pct))
+
+#Así elimino observaciones sin datos. 
+
+```
+
+```{r}
+# Transformar base países
+
+metadata = metadata |> 
+  select(country_code, region, incomegroup, tablename) |> 
+  rename(
+    income_group = incomegroup,
+    table_name = tablename
+  )
+
+head(metadata)
+
+```
+
+```{r}
+# UNIR BASES DE DATOS
+# Se unen pivoteando por country_code que es el clave común entre la tabla de indicadores de internet y metada (archivo de paises. )
+
+base_unida = internet_long |>
+  left_join(metadata, by = "country_code")
+
+head(base_unida)
+glimpse(base_unida)
 
 ```
