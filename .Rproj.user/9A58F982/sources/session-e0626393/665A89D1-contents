@@ -28,6 +28,53 @@ if (!dir.exists(html_dir)) {
 
 timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
 
-# Celda 2  - 
+
+# Celda 2  - Funciones para hacer el scraping de los datos
+
+#Función para armar URLs de los comunicados mensuales
+construir_url_mes =function(mes, anio){ 
+  paste0(    "https://www.oas.org/es/centro_noticias/comunicados_prensa.asp?nMes=",
+             mes, "&nAnio=", anio
+             )
+  }
+
+#Función para leer html con httr2 (en consideración del crawl delay)
+
+leer_html = function(url, delay = 3) {
+  Sys.sleep(delay)
+  resp = request(url) |>
+    req_user_agent("MVD-TP2-scraper/1.0 (uso academico)") |>
+    req_perform()
+  
+  if (resp_status(resp) >= 400) {
+    warning("Error HTTP en: ", url)
+    return(NULL)
+  }
+  read_html(resp_body_string(resp))
+}
+
+# Guardar HTML crudo para trazabilidad / reproducibilidad
+guardar_html_raw <- function(url, path_archivo) {
+  resp <- request(url) |>
+    req_user_agent("MVD-TP2-scraper/1.0 (uso academico)") |>
+    req_perform()
+  
+  write_file(resp_body_string(resp), path_archivo)
+}
+
+#Celda 3 - Extrac
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
