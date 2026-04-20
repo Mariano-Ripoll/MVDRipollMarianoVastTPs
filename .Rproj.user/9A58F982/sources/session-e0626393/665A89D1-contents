@@ -62,7 +62,20 @@ guardar_html_raw <- function(url, path_archivo) {
   write_file(resp_body_string(resp), path_archivo)
 }
 
-#Celda 3 - Extrac
+#Celda 3 - Extracción de links de comunicados en list mensuales: 
+
+# 1 Función madre para la extracción
+
+
+
+
+#Celda 4 - Extracción  de contenido: 
+
+# 1 Función para llamar post función celda 3. 
+
+
+#Celda 5 - Pipeline scrapeo (llamado a las funciones) y guardado bruto de datos. 
+
 
 
 
