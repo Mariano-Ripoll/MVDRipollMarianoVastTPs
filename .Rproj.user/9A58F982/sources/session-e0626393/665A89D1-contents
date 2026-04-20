@@ -1,0 +1,33 @@
+# Celda 1 - Base programatica. 
+
+install.packages(c("tidyverse", "rvest", "httr2", "xml2", "here", "robotstxt"))
+library(tidyverse)
+library(rvest)
+library(httr)
+library(xml2)
+library(here)
+library(robotstxt)
+
+#Datos para scrapear
+anios_objetivo = 2023:2026
+meses_objetivo = 1:4
+crawl_delay = 3 
+
+#Directorios: 
+data_dir <- here("TP2", "data")
+html_dir <- here("TP2", "data", "html")
+
+if (!dir.exists(data_dir)) {
+  dir.create(data_dir, recursive = TRUE)
+  message("Creando directorio: ", data_dir)
+}
+if (!dir.exists(html_dir)) {
+  dir.create(html_dir, recursive = TRUE)
+  message("Creando directorio: ", html_dir)
+}
+
+timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+
+# Celda 2  - 
+
+

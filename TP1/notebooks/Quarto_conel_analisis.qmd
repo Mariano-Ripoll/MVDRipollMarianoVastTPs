@@ -263,6 +263,11 @@ resultado_hipotesis |>
 
 #Export a output: 
 write_csv(resultado_hipotesis, "../output/resultado_hipotesis.csv")
+```
+
+
+
+
 
 
 
