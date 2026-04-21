@@ -191,3 +191,4 @@ message("Total comunicados válidos: ", nrow(comunicados_raw))
 
 
 
+
