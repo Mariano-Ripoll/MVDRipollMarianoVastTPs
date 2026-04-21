@@ -1,5 +1,3 @@
-install.packages(tidytext)
-
 suppressPackageStartupMessages({
   library(tidyverse)
   library(tidytext)
@@ -7,14 +5,10 @@ suppressPackageStartupMessages({
   library(here)
 })
 
-
 input_file <- here("TP2", "output", "processed_text.rds")
 output_dir <- here("TP2", "output")
 
-if (!dir.exists(output_dir)) {
-  dir.create(output_dir, recursive = TRUE)
-  message("Creando directorio: ", output_dir)
-}
+if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 obj <- read_rds(input_file)
 tokens <- obj$processed_tokens
@@ -24,14 +18,13 @@ frecuencia_tokens <- tokens |>
   count(id, lemma, name = "n") |>
   arrange(id)
 
-# Document Term Matrix
 matriz_dtm <- frecuencia_tokens |>
   cast_dtm(document = id, term = lemma, value = n)
 
 write_rds(matriz_dtm, here("TP2", "output", "dtm_oea.rds"))
 message("Guardado: TP2/output/dtm_oea.rds")
 
-# 5 términos de interés institucional (ajustables)
+# 5 términos de interés institucional 
 terminos_de_interes <- c("democracia", "derecho", "desarrollo", "seguridad", "mujer")
 
 matriz_dtm_de_interes <- matriz_dtm[, colnames(matriz_dtm) %in% terminos_de_interes]
@@ -72,4 +65,5 @@ ggsave(
 )
 
 message("Figura guardada: TP2/output/frecuencia_terminos.png")
+
 

@@ -1,0 +1,10 @@
+"0",""
+"0","library(here)"
+"0",""
+"0","source(here(""TP2/scripts/scraping_oea.R""))"
+"1","[1m[33mError[39m in `mutate()` at ]8;line = 149:col = 1;file://C:\Users\Maria\Documents\GitHub\MVDRipollMarianoVastTPs\TP2\scripts\Scraping_oea.RTP2/scripts/scraping_oea.R:149:1]8;;:[22m
+[38;5;232m[36mℹ[38;5;232m In argument: `url_mes = map2_chr(mes, anio, build_url_mes)`.[39m
+[1mCaused by error:[22m
+[33m![39m object 'build_url_mes' not found
+[90mRun `]8;;x-r-run:rlang::last_trace()rlang::last_trace()]8;;` to see where the error occurred.[39m
+"

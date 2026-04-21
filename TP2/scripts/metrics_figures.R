@@ -1,0 +1,75 @@
+install.packages(tidytext)
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(tidytext)
+  library(ggplot2)
+  library(here)
+})
+
+
+input_file <- here("TP2", "output", "processed_text.rds")
+output_dir <- here("TP2", "output")
+
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+  message("Creando directorio: ", output_dir)
+}
+
+obj <- read_rds(input_file)
+tokens <- obj$processed_tokens
+
+# Frecuencia de tokens por documento
+frecuencia_tokens <- tokens |>
+  count(id, lemma, name = "n") |>
+  arrange(id)
+
+# Document Term Matrix
+matriz_dtm <- frecuencia_tokens |>
+  cast_dtm(document = id, term = lemma, value = n)
+
+write_rds(matriz_dtm, here("TP2", "output", "dtm_oea.rds"))
+message("Guardado: TP2/output/dtm_oea.rds")
+
+# 5 términos de interés institucional (ajustables)
+terminos_de_interes <- c("democracia", "derecho", "desarrollo", "seguridad", "mujer")
+
+matriz_dtm_de_interes <- matriz_dtm[, colnames(matriz_dtm) %in% terminos_de_interes]
+
+# Condensamos conteo total por término
+dtm_df <- as.data.frame(as.matrix(matriz_dtm_de_interes)) |>
+  rownames_to_column(var = "id") |>
+  pivot_longer(-id, names_to = "lemma", values_to = "n") |>
+  group_by(lemma) |>
+  summarise(frecuencia_total = sum(n), .groups = "drop") |>
+  complete(lemma = terminos_de_interes, fill = list(frecuencia_total = 0))
+
+write_rds(dtm_df, here("TP2", "output", "frecuencia_5_terminos.rds"))
+
+# Gráfico final
+g <- ggplot(dtm_df, aes(x = lemma, y = frecuencia_total)) +
+  geom_col(fill = "blue") +
+  labs(
+    title = "Frecuencia de términos de interés en la DTM",
+    subtitle = "Comunicados OEA (enero-abril, 2023-2026)",
+    x = "Término",
+    y = "Frecuencia",
+    caption = "Fuente: OEA - Comunicados de prensa"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+ggsave(
+  filename = here("TP2", "output", "frecuencia_terminos.png"),
+  plot = g,
+  width = 9,
+  height = 6,
+  dpi = 300
+)
+
+message("Figura guardada: TP2/output/frecuencia_terminos.png")
+

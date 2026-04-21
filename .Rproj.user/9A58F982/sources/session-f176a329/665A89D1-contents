@@ -1,12 +1,14 @@
 # Celda 1 - Base programatica. 
 
 # install.packages(c("tidyverse", "rvest", "httr2", "xml2", "here", "robotstxt"))
-library(tidyverse)
-library(rvest)
-library(httr)
-library(xml2)
-library(here)
-library(robotstxt)
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(rvest)
+  library(httr2)
+  library(xml2)
+  library(here)
+  library(robotstxt)
+})
 
 #Datos para scrapear
 anios_objetivo = 2023:2026
