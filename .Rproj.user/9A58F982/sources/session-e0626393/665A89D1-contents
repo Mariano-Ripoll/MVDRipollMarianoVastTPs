@@ -68,7 +68,7 @@ guardar_html_raw <- function(url, path_archivo) {
 extraer_links_mes = function(url_mes, html_dir, timestamp, delay = crawl_delay) {
   message("leyendo listado mensuak:", url_mes)
   
-  pagina = leer_html(url_mes, delay = crawl_delay)
+  pagina = leer_html(url_mes, delay = delay)
   if (is.null(pagina)) return(tibble(url=character(0)))
   
   #GUARDAR hrtml listado 
@@ -139,8 +139,45 @@ extraer_contenido_comunicado = function(url_comunicado, html_dir, timestamp, del
 
 #Celda 5 - Pipeline scrapeo (llamado a las funciones) y guardado bruto de datos. 
 
+permitido = paths_allowed(
+  "https://www.oas.org/es/centro_noticias/comunicados_prensa.asp?nMes=4&nAnio=2026",
+  bot = "*"
+)
+message("permitir robots.txt para la url:", permitido)
 
+#Periodos target: 
+periodo=tidyr::expand_grid(
+  anio=anios_objetivo,
+  mes=meses_objetivo
+)|>
+  mutate(url_mes=map2_chr(mes,anio,build_url_mes))
 
+#Scrapeo de links;
+tabla_links=periodo |> 
+  mutate(data = map(url_mes, ~ extraer_links_mes(.x, html_dir, timestamp, delay = crawl_delay))) |>
+  select(data) |>
+  unnest(data) |>
+  distinct(url)
+message("n_links=",nrow(tabla_links))
+
+#Scrapeo comunicados: 
+comunicados_raw = tabla_links |> 
+  mutate(data = map(url, ~ extraer_contenido_comunicado(.x, html_dir, timestamp, delay = crawl_delay))) |>
+  unnest(data) |>
+  filter(!is.na(titulo), titulo != "", !is.na(cuerpo), cuerpo != "") |>
+  distinct(url, .keep_all = TRUE) |>
+  mutate(id = row_number()) |>
+  select(id, titulo, cuerpo, url)
+
+attr(comunicados_raw, "fecha_descarga") <- Sys.time()
+
+write_rds(
+  comunicados_raw,
+  here("TP2", "data", "oea_comunicados_raw.rds")
+)
+
+message("Guardado: TP2/data/oea_comunicados_raw.rds")
+message("Total comunicados válidos: ", nrow(comunicados_raw))
 
 
 
