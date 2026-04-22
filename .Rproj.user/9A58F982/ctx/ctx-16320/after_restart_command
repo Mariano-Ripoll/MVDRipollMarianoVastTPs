@@ -1,0 +1,1 @@
+@install.packages(c("tidyverse", "rvest", "httr2", "xml2", "here",      "robotstxt", "udpipe", "stopwords", "tidytext", "tm", "ggplot2"))

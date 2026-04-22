@@ -1,5 +1,3 @@
-install.packages(tidytext)
-
 suppressPackageStartupMessages({
   library(tidyverse)
   library(tidytext)
@@ -7,14 +5,11 @@ suppressPackageStartupMessages({
   library(here)
 })
 
-
 input_file <- here("TP2", "output", "processed_text.rds")
 output_dir <- here("TP2", "output")
 
-if (!dir.exists(output_dir)) {
-  dir.create(output_dir, recursive = TRUE)
-  message("Creando directorio: ", output_dir)
-}
+if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+
 
 obj <- read_rds(input_file)
 tokens <- obj$processed_tokens
@@ -24,27 +19,28 @@ frecuencia_tokens <- tokens |>
   count(id, lemma, name = "n") |>
   arrange(id)
 
-# Document Term Matrix
-matriz_dtm <- frecuencia_tokens |>
-  cast_dtm(document = id, term = lemma, value = n)
+# DTM como matriz (documento x término)
+matriz_dtm <- xtabs(n ~ id + lemma, data = frecuencia_tokens)
 
-write_rds(matriz_dtm, here("TP2", "output", "dtm_oea.rds"))
+# Guardamos la DTM
+saveRDS(matriz_dtm, here("TP2", "output", "dtm_oea.rds"))
 message("Guardado: TP2/output/dtm_oea.rds")
 
-# 5 términos de interés institucional (ajustables)
+# términos de interés institucional
 terminos_de_interes <- c("democracia", "derecho", "desarrollo", "seguridad", "mujer")
 
-matriz_dtm_de_interes <- matriz_dtm[, colnames(matriz_dtm) %in% terminos_de_interes]
+# Nos aseguramos de quedarnos solo con columnas existentes en la DTM
+terminos_presentes <- intersect(terminos_de_interes, colnames(matriz_dtm))
 
-# Condensamos conteo total por término
-dtm_df <- as.data.frame(as.matrix(matriz_dtm_de_interes)) |>
-  rownames_to_column(var = "id") |>
-  pivot_longer(-id, names_to = "lemma", values_to = "n") |>
+# Si faltam agregamos con 0 para que siempre haya 5 en el gráfico final
+dtm_df <- as.data.frame(matriz_dtm) |>
+  rename(id = id, lemma = lemma, n = Freq) |>
+  filter(lemma %in% terminos_presentes) |>
   group_by(lemma) |>
   summarise(frecuencia_total = sum(n), .groups = "drop") |>
   complete(lemma = terminos_de_interes, fill = list(frecuencia_total = 0))
 
-write_rds(dtm_df, here("TP2", "output", "frecuencia_5_terminos.rds"))
+saveRDS(dtm_df, here("TP2", "output", "frecuencia_5_terminos.rds"))
 
 # Gráfico final
 g <- ggplot(dtm_df, aes(x = lemma, y = frecuencia_total)) +
@@ -72,4 +68,3 @@ ggsave(
 )
 
 message("Figura guardada: TP2/output/frecuencia_terminos.png")
-

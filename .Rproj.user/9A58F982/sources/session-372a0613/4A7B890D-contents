@@ -1,0 +1,133 @@
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(tidytext)
+  library(ggplot2)
+  library(here)
+})
+
+input_file <- here("TP2", "output", "processed_text.rds")
+output_dir <- here("TP2", "output")
+
+if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+
+obj <- read_rds(input_file)
+tokens <- obj$processed_tokens
+
+# Frecuencia por documento y lemma
+frecuencia_tokens <- tokens |>
+  count(id, lemma, name = "n") |>
+  arrange(id)
+
+# DTM 
+matriz_dtm <- xtabs(n ~ id + lemma, data = frecuencia_tokens)
+saveRDS(matriz_dtm, here("TP2", "output", "dtm_oea.rds"))
+message("Guardado: TP2/output/dtm_oea.rds")
+
+# Selección de Candidatos institucionales de interes político
+candidatos <- c(
+  "democracia", "derecho", "desarrollo", "seguridad", "mujer",
+  "estado", "gobierno", "pais", "país", "regional",
+  "cooperacion", "cooperación", "interamericano", "eleccion", "elección",
+  "justicia", "paz", "violencia", "institucion", "institución"
+)
+
+# Frecuencia global de lemas
+freq_global <- frecuencia_tokens |>
+  group_by(lemma) |>
+  summarise(frecuencia_total = sum(n), .groups = "drop") |>
+  arrange(desc(frecuencia_total))
+
+# Elegimos hasta 5 términos presentes del listado de candidatos
+terminos_de_interes <- freq_global |>
+  filter(lemma %in% candidatos) |>
+  slice_max(order_by = frecuencia_total, n = 5, with_ties = FALSE) |>
+  pull(lemma)
+
+# Si por algún motivo no llega a 5, completamos con top global
+if (length(terminos_de_interes) < 5) {
+  faltan <- 5 - length(terminos_de_interes)
+  adicionales <- freq_global |>
+    filter(!lemma %in% terminos_de_interes) |>
+    slice_head(n = faltan) |>
+    pull(lemma)
+  terminos_de_interes <- c(terminos_de_interes, adicionales)
+}
+
+message("Términos seleccionados: ", paste(terminos_de_interes, collapse = ", "))
+
+# Frecuencia total de esos 5 términos
+freq_5 <- frecuencia_tokens |>
+  filter(lemma %in% terminos_de_interes) |>
+  group_by(lemma) |>
+  summarise(frecuencia_total = sum(n), .groups = "drop") |>
+  complete(lemma = terminos_de_interes, fill = list(frecuencia_total = 0)) |>
+  arrange(desc(frecuencia_total))
+
+write_rds(freq_5, here("TP2", "output", "frecuencia_5_terminos.rds"))
+
+# Figura obligatoria del TP
+g_total <- ggplot(freq_5, aes(x = reorder(lemma, frecuencia_total), y = frecuencia_total)) +
+  geom_col(fill = "blue") +
+  coord_flip() +
+  labs(
+    title = "Frecuencia total de 5 términos relevantes",
+    subtitle = "Comunicados OEA (enero-abril, 2023-2026)",
+    x = "Término",
+    y = "Frecuencia",
+    caption = "Fuente: OEA - Comunicados de prensa"
+  ) +
+  theme_minimal(base_size = 14)
+
+ggsave(
+  filename = here("TP2", "output", "frecuencia_terminos.png"),
+  plot = g_total,
+  width = 9, height = 6, dpi = 300
+)
+
+message("Figura guardada: TP2/output/frecuencia_terminos.png")
+
+#Comparación por año para esos mismos 5 términos
+
+
+# Extraemos año desde URL de listado? No está directo en URL de comunicado.
+# Alternativa robusta: inferimos año por prefijo sCodigo si contiene /23 /24 /25 /26
+# (Si falla en algunos casos, quedan NA)
+raw_con_anio <- raw_tbl |>
+  mutate(
+    codigo = str_extract(url, "sCodigo=[^&]+") |> str_replace("sCodigo=", ""),
+    anio = str_extract(codigo, "(?<=/)\\d{2}") |> as.integer(),
+    anio = if_else(!is.na(anio), 2000 + anio, NA_integer_)
+  ) |>
+  select(id, anio)
+
+tokens_anio <- frecuencia_tokens |>
+  left_join(raw_con_anio, by = "id") |>
+  filter(!is.na(anio), lemma %in% terminos_de_interes)
+
+freq_5_anio <- tokens_anio |>
+  group_by(anio, lemma) |>
+  summarise(frecuencia = sum(n), .groups = "drop") |>
+  complete(anio, lemma = terminos_de_interes, fill = list(frecuencia = 0)) |>
+  arrange(anio, desc(frecuencia))
+
+write_rds(freq_5_anio, here("TP2", "output", "frecuencia_terminos_por_anio.rds"))
+
+g_anio <- ggplot(freq_5_anio, aes(x = factor(anio), y = frecuencia, fill = lemma)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Frecuencia de los 5 términos seleccionados por año",
+    subtitle = "Comunicados OEA (enero-abril de cada año)",
+    x = "Año",
+    y = "Frecuencia",
+    fill = "Término"
+  ) +
+  theme_minimal(base_size = 13)
+
+ggsave(
+  filename = here("TP2", "output", "frecuencia_terminos_por_anio.png"),
+  plot = g_anio,
+  width = 10, height = 6, dpi = 300
+)
+
+message("Figura guardada: TP2/output/frecuencia_terminos_por_anio.png")
+message("Tabla guardada: TP2/output/frecuencia_terminos_por_anio.rds")

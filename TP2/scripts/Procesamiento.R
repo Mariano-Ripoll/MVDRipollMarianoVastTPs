@@ -7,11 +7,20 @@ suppressPackageStartupMessages({
   library(here)
 })
 
-input.file = here("TP2","data", "oea_comunicados_raw.rds")
-output_dir = here("TP2", "output")
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(udpipe)
+  library(stopwords)
+  library(here)
+})
+
+input_file <- here("TP2", "data", "oea_comunicados_raw.rds")
+output_dir <- here("TP2", "output")
 output_file <- here("TP2", "output", "processed_text.rds")
 model_dir <- here("TP2", "data", "models")
 
+if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+if (!dir.exists(model_dir)) dir.create(model_dir, recursive = TRUE)
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
   message("Creando directorio: ", output_dir)
