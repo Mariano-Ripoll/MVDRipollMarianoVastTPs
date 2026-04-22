@@ -1,10 +1,7 @@
 # Métricas y figura final-
 # Objetivo:
-# 1) Leer los tokens procesados (lemmatizados y filtrados)
-# 2) Construir la DTM (Document-Term Matrix) en formato matriz base
-# 3) Elegir 5 términos institucionales presentes en el corpus
-# 4) Calcular frecuencia total de esos 5 términos
-# 5) Guardar tabla y figura final en /output
+# La idea es leer los tokens procesados (lemmatizados y filtrados) para armar una DTM en formato matriz base
+# Luego calcular la frecuencia absoluta de 5 términos de interes y guardart tabla y figura final en /output
 
 suppressPackageStartupMessages({
   library(tidyverse)
@@ -16,7 +13,7 @@ suppressPackageStartupMessages({
 input_file <- here("TP2", "output", "processed_text.rds")
 output_dir <- here("TP2", "output")
 
-# Creamos output si no existe
+# Crear output primera vez
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
   message("Creando directorio: ", output_dir)
@@ -32,34 +29,33 @@ frecuencia_tokens <- tokens |>
   arrange(id)
 
 # 2) DTM en formato matriz (documento x término)
-# Usamos xtabs para evitar dependencia de tm/cast_dtm
+#xtabs para evitar dependencia de tm/cast_dtm (tm me corría mal)
 matriz_dtm <- xtabs(n ~ id + lemma, data = frecuencia_tokens)
 
-# Guardamos DTM para trazabilidad
+# Guardamos DTM tipo checkpoint
 saveRDS(matriz_dtm, here("TP2", "output", "dtm_oea.rds"))
 message("Guardado: TP2/output/dtm_oea.rds")
 
-# 3) Definimos un conjunto amplio de candidatos institucionales
-# Luego nos quedamos con los 5 más frecuentes que efectivamente existan en el corpus
+# 3) Acá defino conjunto amplio de términos candidatos institucionales
+# Despues se filtra por los 5 dados más frecuentes
 candidatos <- c(
   "democracia", "derecho", "desarrollo", "seguridad", "mujer",
   "estado", "gobierno", "país", "pais", "regional",
   "cooperación", "cooperacion", "interamericano", "justicia", "paz", "violencia"
 )
 
-# Frecuencia total por lemma en todo el corpus
+# Frecuencia total por lemma en todo el contenido recabado
 freq_global <- frecuencia_tokens |>
   group_by(lemma) |>
   summarise(frecuencia_total = sum(n), .groups = "drop") |>
   arrange(desc(frecuencia_total))
 
-# Elegimos hasta 5 términos presentes dentro de los candidatos
 terminos_de_interes <- freq_global |>
   filter(lemma %in% candidatos) |>
   slice_max(order_by = frecuencia_total, n = 5, with_ties = FALSE) |>
   pull(lemma)
 
-# Si por algún motivo hay menos de 5 en candidatos, completamos con top global
+# Como control; por si por algún motivo hubiera menos de 5 en candidatos, elijo que se completa con top global
 if (length(terminos_de_interes) < 5) {
   faltan <- 5 - length(terminos_de_interes)
   adicionales <- freq_global |>
@@ -71,7 +67,7 @@ if (length(terminos_de_interes) < 5) {
 
 message("Términos seleccionados: ", paste(terminos_de_interes, collapse = ", "))
 
-# 4) Frecuencia total de los 5 términos seleccionados
+# 4) Dar frec total de los 5 terminos seleccionados
 freq_5 <- frecuencia_tokens |>
   filter(lemma %in% terminos_de_interes) |>
   group_by(lemma) |>
@@ -79,11 +75,11 @@ freq_5 <- frecuencia_tokens |>
   complete(lemma = terminos_de_interes, fill = list(frecuencia_total = 0)) |>
   arrange(desc(frecuencia_total))
 
-# Guardamos tabla de frecuencias final
+# tabla de frecuencias final
 write_rds(freq_5, here("TP2", "output", "frecuencia_5_terminos.rds"))
 message("Guardado: TP2/output/frecuencia_5_terminos.rds")
 
-# 5) Figura final (la que pide la consigna)
+# 5) Figura final 
 g <- ggplot(freq_5, aes(x = reorder(lemma, frecuencia_total), y = frecuencia_total)) +
   geom_col(fill = "blue") +
   coord_flip() +
