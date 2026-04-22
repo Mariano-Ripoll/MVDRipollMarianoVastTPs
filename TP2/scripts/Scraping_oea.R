@@ -12,7 +12,7 @@ suppressPackageStartupMessages({
 })
 
 #Datos para scrapear
-anios_objetivo = 2023:2026
+anio_objetivo = 2026
 meses_objetivo = 1:4
 crawl_delay = 3 
 
@@ -65,58 +65,100 @@ guardar_html_raw <- function(url, path_archivo) {
   write_file(resp_body_string(resp), path_archivo)
 }
 
-#Celda 3 - Extracción de links de comunicados en list mensuales: 
+# Celda 3 - Extracción de links de comunicados en list mensuales: 
 
 # 1 Función madre para la extracción
+# Celda 3 - Extracción de links de comunicados en listados mensuales ----
+# 
+# En lugar de extraer el título desde cada comunicado individual (donde el selector está dando ruido),
+# lo obtenemos directamente del listado mensual, donde el texto del enlace es el título correcto.
+# Esto nos da una estrategia más estable y evita capturar "A" como título.
+
 extraer_links_mes = function(url_mes, html_dir, timestamp, delay = crawl_delay) {
-  message("leyendo listado mensuak:", url_mes)
+  message("Leyendo listado mensual: ", url_mes)
   
+  # 1) Leemos el HTML del listado mensual
   pagina = leer_html(url_mes, delay = delay)
-  if (is.null(pagina)) return(tibble(url=character(0)))
+  if (is.null(pagina)) {
+    # Si falla, devolvemos tibble vacío con columnas esperadas
+    return(tibble(url = character(0), titulo_listado = character(0)))
+  }
   
-  #GUARDAR hrtml listado 
+  # 2) Guardamos el html del listado para reproducibilidad
+  # Esto es útil para auditar qué página fue scrapeada y cuándo
   nombre_archivo = paste0(
     "listado_",
-    str_replace_all(url_mes,"[^[:alnum:]]", "_"), 
+    str_replace_all(url_mes, "[^[:alnum:]]", "_"),
     "_", timestamp, ".html"
   )
-  guardar_html_raw(url_mes,file.path(html_dir, nombre_archivo))
-
-  # De los datos/parametros del Selector para la página: 
-  links = pagina |>
-    html_elements(".itemmenulink")|>
-    html_attr("href")|>
-    discard(is.na)|>
+  guardar_html_raw(url_mes, file.path(html_dir, nombre_archivo))
+  
+  # 3) Selector elegido por vos: "td a"
+  # Tomamos todos los anchors dentro de celdas de tabla
+  nodos = pagina |> html_elements("td a")
+  
+  # Extraemos href (link) y texto visible del enlace (título)
+  links = nodos |>
+    html_attr("href") |>
+    discard(is.na) |>
     str_squish()
   
-  links = ifelse(str_detect(links, "^http"), links, url_absolute(links, "https://www.oas.org"))
-  links = links[str_detect(links, "comunicado_prensa\\.asp\\?sCodigo=")]#Para quedarse solo con coms de prensa
+  titulos = nodos |>
+    html_text2() |>
+    str_squish()
   
-  tibble(url = unique(links))
+  # 4) Convertimos links relativos en absolutos
+  # Usamos como base url_mes para conservar correctamente /es/centro_noticias/
+  links = ifelse(str_detect(links, "^http"), links, url_absolute(links, url_mes))
+  
+  # 5) Construimos tabla y filtramos solo comunicados de prensa
+  out = tibble(
+    url = links,
+    titulo_listado = titulos
+  ) |>
+    filter(str_detect(url, "comunicado_prensa\\.asp\\?sCodigo=")) |>
+    # Excluimos títulos vacíos o demasiado cortos (ruido)
+    filter(titulo_listado != "", nchar(titulo_listado) > 10) |>
+    distinct(url, .keep_all = TRUE)
+  
+  message("Links válidos detectados en el mes: ", nrow(out))
+  return(out)
 }
-
 #Celda 4 - Extracción  de contenido: 
 
-# 1 Función para llamar post función celda 3. 
+# 1 Función para llamar post f0unción celda 3. 
 # extraer título y cuerpo de cada comunicado
+# Celda 4 - Extracción de contenido por comunicado ----
+# Idea general:
+# Acá ya NO extraemos título (porque viene limpio desde el listado mensual).
+# Esta función se dedica exclusivamente a:
+# 1) descargar/guardar html individual
+# 2) extraer y limpiar el cuerpo textual del comunicado
+
 extraer_contenido_comunicado <- function(url_comunicado, html_dir, timestamp, delay = 3) {
   message("Procesando comunicado de prensa: ", url_comunicado)
   
+  # 1) Leemos html del comunicado
   pagina <- leer_html(url_comunicado, delay = delay)
-  
   if (is.null(pagina)) {
-    return(tibble(titulo = NA_character_, cuerpo = NA_character_))
+    return(tibble(cuerpo = NA_character_))
   }
   
-  # Extraer código desde la URL (ej: C-038/26)
+  # 2) Construimos identificador de archivo para guardar html
+  # Si existe sCodigo en la URL lo usamos; si no, usamos un ID técnico derivado de la URL
   codigo <- str_extract(url_comunicado, "sCodigo=[^&]+") |>
     str_replace("sCodigo=", "")
   
-  #Estandarizar:
+  codigo <- ifelse(
+    is.na(codigo),
+    str_sub(str_replace_all(url_comunicado, "[^[:alnum:]]", "_"), 1, 120),
+    codigo
+  )
+  
+  # Sanitizamos para evitar errores de escritura de archivo (ej: "/" en C-044/26)
   codigo <- str_replace_all(codigo, "[^[:alnum:]_-]", "_")
   
-  
-  # Guardar html individual (no frenar pipeline si falla una URL)
+  # 3) Guardado html individual (si falla, no detenemos el pipeline)
   try(
     guardar_html_raw(
       url_comunicado,
@@ -125,65 +167,78 @@ extraer_contenido_comunicado <- function(url_comunicado, html_dir, timestamp, de
     silent = TRUE
   )
   
-  # Título 
-  titulo <- pagina |>
-    html_elements("h4") |>
-    html_text2() |>
-    str_squish()
-  
-  titulo <- titulo[titulo != ""]
-  titulo <- if (length(titulo) > 0) titulo[1] else NA_character_
-  
-  # Cuerpo 
+  # 4) Extraemos párrafos del cuerpo
+  # Selector "p" funciona bien para contenido principal en este sitio
   parrafos <- pagina |>
     html_elements("p") |>
     html_text2() |>
     str_squish()
   
+  # 5) Filtrado básico de ruido
   parrafos <- parrafos[parrafos != ""]
   parrafos <- parrafos[nchar(parrafos) > 40]
   
+  # 6) Unificamos en un solo cuerpo por comunicado
   cuerpo <- if (length(parrafos) > 0) str_c(parrafos, collapse = " ") else NA_character_
   cuerpo <- str_replace_all(cuerpo, "[\\r\\n\\t]+", " ")
   cuerpo <- str_squish(cuerpo)
   
-  tibble(titulo = titulo, cuerpo = cuerpo)
+  return(tibble(cuerpo = cuerpo))
 }
 
-#Celda 5 - Pipeline scrapeo (llamado a las funciones) y guardado bruto de datos. 
+# Celda 5 - Pipeline scrapeo (llamado a funciones) y guardado bruto de datos ----
+# Idea general:
+# 1) Armamos el periodo objetivo (solo meses 1:4 del año 2026)
+# 2) Scrapeamos links + títulos desde listados mensuales
+# 3) Scrapeamos cuerpo de cada comunicado individual
+# 4) Unimos todo y guardamos base raw final (id, titulo, cuerpo, url)
 
 permitido = paths_allowed(
   "https://www.oas.org/es/centro_noticias/comunicados_prensa.asp?nMes=4&nAnio=2026",
   bot = "*"
 )
-message("permitir robots.txt para la url:", permitido)
+message("Permiso robots.txt para la URL: ", permitido)
 
-#Periodos target: 
-periodo=tidyr::expand_grid(
-  anio=anios_objetivo,
-  mes=meses_objetivo
-)|>
-  mutate(url_mes=map2_chr(mes,anio,construir_url_mes))
+# Periodo target: enero-abril de 2026
+periodo = tidyr::expand_grid(
+  anio = anio_objetivo,   
+  mes = meses_objetivo    
+) |>
+  mutate(url_mes = map2_chr(mes, anio, construir_url_mes))
 
-#Scrapeo de links;
-tabla_links=periodo |> 
+# 1) Scrapeo de links + títulos desde listados mensuales
+tabla_links = periodo |>
   mutate(data = map(url_mes, ~ extraer_links_mes(.x, html_dir, timestamp, delay = crawl_delay))) |>
   select(data) |>
   unnest(data) |>
-  distinct(url)
-message("n_links=",nrow(tabla_links))
+  distinct(url, .keep_all = TRUE)
 
-#Scrapeo comunicados: 
-comunicados_raw = tabla_links |> 
+message("Cantidad total de links únicos: ", nrow(tabla_links))
+
+# Filtro de seguridad por patrón de URL esperado
+tabla_links = tabla_links |>
+  filter(str_detect(url, "/es/centro_noticias/comunicado_prensa\\.asp\\?sCodigo="))
+
+message("Cantidad de links luego de filtro de ruta: ", nrow(tabla_links))
+
+# 2) Scrapeo de cuerpos por comunicado
+comunicados_raw = tabla_links |>
   mutate(data = map(url, ~ extraer_contenido_comunicado(.x, html_dir, timestamp, delay = crawl_delay))) |>
   unnest(data) |>
+  # 3) Armamos título final usando título del listado (estrategia robusta)
+  mutate(titulo = titulo_listado) |>
+  # 4) Limpieza mínima de registros incompletos
   filter(!is.na(titulo), titulo != "", !is.na(cuerpo), cuerpo != "") |>
+  # Filtro de ruido por si se cuela alguna página de error
+  filter(!str_detect(str_to_lower(cuerpo), "javascript|please|site map|temporarily unavailable|not found")) |>
   distinct(url, .keep_all = TRUE) |>
   mutate(id = row_number()) |>
   select(id, titulo, cuerpo, url)
 
+# Registro de fecha de descarga
 attr(comunicados_raw, "fecha_descarga") <- Sys.time()
 
+# Guardado final raw
 write_rds(
   comunicados_raw,
   here("TP2", "data", "oea_comunicados_raw.rds")
@@ -191,17 +246,3 @@ write_rds(
 
 message("Guardado: TP2/data/oea_comunicados_raw.rds")
 message("Total comunicados válidos: ", nrow(comunicados_raw))
-
-
-
-
-
-
-
-
-
-
-
-
-
-

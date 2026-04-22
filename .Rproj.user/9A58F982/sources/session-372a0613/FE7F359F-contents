@@ -4,7 +4,7 @@ format: html
 editor: visual
 ---
 
-**¿Qué términos institucionales dominaron la agenda de los comunicados de prensa de la OEA durante el primer cuatrimestre (enero-abril) de 2023, 2024, 2025 y 2026, según su frecuencia dada por una DTM construida sobre texto lematizado?**
+**¿Qué términos institucionales dominaron la agenda de los comunicados de prensa de la OEA durante el primer cuatrimestre (enero-abril) de 2026, según su frecuencia?**
 
 ```{r}
 ## Estructura modular del proyecto
