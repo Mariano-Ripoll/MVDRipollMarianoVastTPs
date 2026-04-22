@@ -1,7 +1,0 @@
-"0",""
-"0","library(here)"
-"0",""
-"0","source(here(""TP2/scripts/Scraping_oea.R""))"
-"0","frecuencia_5_terminos <- readRDS(""~/GitHub/MVDRipollMarianoVastTPs/TP2/output/frecuencia_5_terminos.rds"")"
-"0","source(here(""TP2/scripts/Procesamiento.R""))"
-"0","source(here(""TP2/scripts/metrics_figures.R""))"

@@ -24,7 +24,10 @@ source(here("TP2/scripts/Procesamiento.R"))
 source(here("TP2/scripts/metrics_figures.R"))
 ```
 
-Dada la figura y resultados obtenidos, los términos relevantes dentro de los seleccionados para las fechas analizadas fueron: derecho, con 100 menciones; país con 62; desarrollo con 47; cooperación con 45; interamericano con 44. \
+![Frecuencia total de 5 términos relevantes en comunicados OEA (ene-abr 2026).](../output/frecuencia_terminos.png)
+
+\
+Dada la figura y resultados obtenidos, los términos relevantes dentro de los seleccionados para las fechas analizadas fueron: derecho, con 100 menciones; país con 62; desarrollo con 47; cooperación con 45; interamericano con 44.\
 \
 En cuanto a la poca riqueza que puede extraerse del subtexto de esta información; quizás lo más relevante sea que exista una jerarquía tan marcada en los términos. Es notorio que derecho predomine tanto y quizás permita notar como hipotesis que la OEA tenga de fondo una preocupación/agenda enfocada al marco institucional desde lo juridico-político de la perspectiva internacional. Más allá de esta posibilidad; en términos sustantivos, el patron sugiere que para el periodo estudiado la comunicación pública de la OEA se orientó principalmente a temas de gobernanza, institucionalización internacional y cooperación regional más que a sectores especificos que hubieran podido denotar (hacer surgir en el analisis) sus propios tópicos específicos.
 
