@@ -24,6 +24,12 @@ source(here("TP2/scripts/Procesamiento.R"))
 source(here("TP2/scripts/metrics_figures.R"))
 ```
 
+El trabajo realizó una selección arbitraria de "términos candidatos" siguiendo un criterio teórico-institucional y no puramente estadístico. Se dio prioridad a palabras que, por su contenido semántico, suelen estructurar lógicamenre el discurso público de organismos multilaterales considerando su jerarquización de información. Busca evitar que la interpretación quede dominada por términos frecuentes pero poco sustantivos, y concentrar el análisis en conceptos con potencial explicativo sobre la agenda comunicacional de la OEA en el período dado.
+
+A partir de ese conjunto relativamente amplio; se establecio criterio de conservar los 5 términos más frecuentes para permitir sintetizar tendencias del corpus en una visualización clara, sin perder anclaje empírico (frecuencias observadas) ni sobrecargar el gráfico con demasiadas categorías. Asimismo, es precisamente la forma de poner una suerte de umbral de corte respecto de los temas que fueron dominantes. La decisión metodológica combina, entonces, una etapa de selección conceptual con una etapa de priorización empírica .
+
+A continuación el resultado hallado:\
+
 ![Frecuencia total de 5 términos relevantes en comunicados OEA (ene-abr 2026).](../output/frecuencia_terminos.png)
 
 \

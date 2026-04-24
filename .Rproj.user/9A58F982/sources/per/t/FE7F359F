@@ -3,7 +3,7 @@
     "path": "~/GitHub/MVDRipollMarianoVastTPs/TP2/notebooks/Informe_oea.qmd",
     "project_path": "TP2/notebooks/Informe_oea.qmd",
     "type": "quarto_markdown",
-    "hash": "2990323271",
+    "hash": "4117009226",
     "contents": "",
     "dirty": false,
     "created": 1776804801257.0,
@@ -18,15 +18,15 @@
         "cursorPosition": "17,0",
         "scrollLine": "0",
         "docOutlineVisible": "1",
-        "rmdVisualModeLocation": "588:815",
+        "rmdVisualModeLocation": "1631:833",
         "rmdVisualCollapsedChunks": ""
     },
     "folds": "",
-    "lastKnownWriteTime": 1776878837,
+    "lastKnownWriteTime": 1777054551,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1776878837426,
+    "last_content_update": 1777054551011,
     "read_only": false,
     "read_only_alternatives": []
 }
