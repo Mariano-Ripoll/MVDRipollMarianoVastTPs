@@ -78,4 +78,128 @@ adult |>
 
 ```
 
+```{r}
+# "Recodificación" de predictores
 
+#construte el dataset analítico recodificando y simplificando aquellas variables
+# con demasiadas categorías, de modo que cada predictor resulte interpretable.
+adult_model <- adult |> 
+  mutate(
+    # Se colapsa el estado civil en dos categorías. Los vínculos conyugales vigentes
+    # ("Married-civ-spouse" y "Married-AF-spouse") se agrupan como "Married".
+    marital_simple = case_when(
+      marital_status %in% c("Married-civ-spouse", "Married-AF-spouse") ~ "Married",
+      TRUE ~ "Not married"
+    ),
+    
+    # Se agrupan los 16 niveles educativos en cuatro tramos ordenados de credencil.
+    education_group = case_when(
+      education %in% c("Preschool", "1st-4th", "5th-6th", "7th-8th",
+                       "9th", "10th", "11th", "12th", "HS-grad") ~ "HS or less",
+      education %in% c("Some-college", "Assoc-acdm", "Assoc-voc")  ~ "Some college/Assoc",
+      education == "Bachelors"                                     ~ "Bachelors",
+      education %in% c("Masters", "Doctorate", "Prof-school")      ~ "Graduate/Professional"
+    ),
+    
+    # Se reducen las 14 ocupaciones a cuatro grandes segmentos del mercado laboral.
+    occupation_group = case_when(
+      occupation %in% c("Exec-managerial", "Prof-specialty")      ~ "Professional/Managerial",
+      occupation %in% c("Tech-support", "Sales", "Adm-clerical")  ~ "Technical/Sales/Admin",
+      occupation %in% c("Craft-repair", "Machine-op-inspct", "Transport-moving",
+                        "Handlers-cleaners", "Farming-fishing")   ~ "Manual/Operational",
+      TRUE ~ "Service/Other"
+    ),
+    
+    # Se simplifica la clase de trabajador en tres sectores estables.
+    workclass_group = case_when(
+      workclass == "Private"                                ~ "Private",
+      workclass %in% c("Federal-gov", "State-gov", "Local-gov") ~ "Government",
+      workclass %in% c("Self-emp-not-inc", "Self-emp-inc")  ~ "Self-employed",
+      TRUE ~ "Other"
+    ),
+    
+    # Se genera una variable binaria de origen nacional (nativo de EE. UU. vs resto).
+    native_us = if_else(native_country == "United-States", "US", "Non-US"),
+    
+    # Se aplican transformaciones log1p() a las rentas de capital, dada su fuerte
+    # asimetría y su alta  concentración en cero.
+    log_capital_gain = log1p(capital_gain),
+    log_capital_loss = log1p(capital_loss)
+  ) |> 
+  # Se descartan los escasos casos "Without-pay" (4 observaciones) que, por su baja
+  # frecuencia, producirían estimaciones inestables en el sector laboral.
+  filter(workclass_group != "Other")
+
+```
+
+```{r}
+# Categorías de referencia
+
+#Codigo fija  de forma explícita las categorías de referencia para cada predictor categórico,
+# elegidas según la narrativa del trabajo. El perfil de referencia es una persona:
+# mujer, no casada, con secundaria o menos, empleada en el sector privado, en ocupación
+# manual, nativa de EE. UU. y de raza blanca. Cada coeficiente se lee como desvío de ese perfil.
+adult_model <- adult_model |> 
+  mutate(
+    sex = factor(sex, levels = c("Female", "Male")),
+    marital_simple = factor(marital_simple, levels = c("Not married", "Married")),
+    education_group = factor(
+      education_group,
+      levels = c("HS or less", "Some college/Assoc", "Bachelors", "Graduate/Professional")
+    ),
+    workclass_group = factor(
+      workclass_group,
+      levels = c("Private", "Government", "Self-employed")
+    ),
+    occupation_group = factor(
+      occupation_group,
+      levels = c("Manual/Operational", "Service/Other",
+                 "Technical/Sales/Admin", "Professional/Managerial")
+    ),
+    native_us = factor(native_us, levels = c("US", "Non-US")),
+    race = fct_relevel(factor(race), "White")
+  )
+```
+
+```{r}
+# Dataset analítico final
+
+# Se seleccionan las variables finales del modelo y se eliminan filas con datos faltantes.
+adult_model <- adult_model |> 
+  select(
+    income,
+    income_high,
+    age,
+    sex,
+    marital_simple,
+    education_group,
+    workclass_group,
+    occupation_group,
+    hours_per_week,
+    log_capital_gain,
+    log_capital_loss,
+    native_us,
+    race
+  ) |> 
+  drop_na()
+# Se inspecciona la estructura del dataset analítico resultante.
+glimpse(adult_model)
+
+#Justificación de la selección: piensese que el modelo combina tres dimensiones. Educación y ocupación capturan diferencias de calificación y segmentación laboral (capital humano e inserción laboral). Hras semanales y rentas de capital aproximan la intensidad del trabajo y las fuentes complementarias de ingreso. Sexo, estado civil, raza y origen permitirían controlar desigualdades sociodemográficas estructurales. 
+
+# NOTESE QUÉ: Se excluyen `education_num` por ser redundante con `education_group`, y `relationship` por su fuerte colinealidad con sexo y estado civil.
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+\
