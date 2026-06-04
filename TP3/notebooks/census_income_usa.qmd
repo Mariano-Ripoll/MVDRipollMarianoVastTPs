@@ -1,0 +1,43 @@
+---
+title: "census_income_usa"
+format: html
+editor: visual
+---
+
+```{r}
+---
+"Regresión logística sobre ingresos altos en Adult Census USA"
+"Mariano Ripoll"
+---
+# INTRODUCCIÓN.
+#El presente trabajo busca aplicar **regresión logística binomial** para modelar la probabilidad dada d que un individuo perciba ingresos anuales superiores a los 50000 dólares (`>50K`), sobre la base de una serie de predictores sociodemográficos y laborales del Adult Census Income de los Estados Unidos.
+  
+#Se pretende un alcance de tipo descriptivo-explicativo ya que el interés no recae en predecir sobre datos nuevos; sino en caracterizar qué factores parecieran determinar la pertenencia al estrato de altos ingresos. Por eso no se desarrolla un esquema/modelo train-test,
+  
+  
+## Librerías necesarias
+
+#| label: load-packages
+#| message: false
+#| warning: false
+
+if (!require("pacman")) install.packages("pacman")
+# Mediante pacman, todas las librerías requeridas para la sesión.
+pacman::p_load(
+  tidyverse,        
+  here,             
+  janitor,          
+  broom,            
+  marginaleffects,  
+  modelsummary,     
+  kableExtra,       
+  scales,           
+  patchwork,        
+  forcats           
+)
+#Paleta de colores coherente para todo el documento:
+# azul para ingresos bajos (<=50K) y rojo para ingresos altos (>50K).
+paleta_income <- c("<=50K" = "blue", ">50K" = "red")
+```
+
+\
