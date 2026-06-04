@@ -5,10 +5,10 @@ editor: visual
 ---
 
 ```{r}
----
-"Regresión logística sobre ingresos altos en Adult Census USA"
-"Mariano Ripoll"
----
+
+# "Regresión logística sobre ingresos altos - Adult Census USA"
+# Por: "Mariano Ripoll Vast"
+
 # INTRODUCCIÓN.
 #El presente trabajo busca aplicar **regresión logística binomial** para modelar la probabilidad dada d que un individuo perciba ingresos anuales superiores a los 50000 dólares (`>50K`), sobre la base de una serie de predictores sociodemográficos y laborales del Adult Census Income de los Estados Unidos.
   
@@ -16,10 +16,6 @@ editor: visual
   
   
 ## Librerías necesarias
-
-#| label: load-packages
-#| message: false
-#| warning: false
 
 if (!require("pacman")) install.packages("pacman")
 # Mediante pacman, todas las librerías requeridas para la sesión.
@@ -40,4 +36,46 @@ pacman::p_load(
 paleta_income <- c("<=50K" = "blue", ">50K" = "red")
 ```
 
-\
+```{r}
+# 1. Preparación, carga y limpieza de datos
+# Carga de datos
+
+# Se cargan datos crudos mediante  ruta relativa con here(),
+adult_raw <- read_csv(
+  here("TP3", "data", "adult_census_USA.csv")
+)
+# Se estandarizan los nombres de las columnas a formato snake_case,
+adult_raw <- adult_raw |> 
+  clean_names()
+
+# transforma income en factor con los niveles ordenados de forma explícita:
+# "<=50K" se fija como categoría de referencia (primer nivel) y ">50K" como la clase
+# a predecir (segundo nivel). Además binariza (0/1).
+adult <- adult_raw |> 
+  mutate(
+    income = factor(income, levels = c("<=50K", ">50K")),
+    income_high = if_else(income == ">50K", 1, 0)
+  )
+
+# Verificación del balance
+
+# variable objetivo calculando x frecuencias y proporciones.
+adult |> 
+  count(income) |> 
+  mutate(prop = n / sum(n)) |> 
+  knitr::kable(
+    digits = 3,
+    col.names = c("Ingreso", "N", "Proporción"),
+    caption = "Distribución de la variable objetivo"
+  ) |> 
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE
+  )
+
+
+# La variable objetivo se encuentra relativamente bien balanceada: aproximadamente el 52 % de las observaciones corresponde a ingresos bajos (`<=50K`) y el 48 % a ingresos altos (`>50K`). Al no existir una asimetría extrema entre clases, no parece menester que se aplican procedimientos de remuestreo y el análisis puede concentrarse en la interpretación del modelo.
+
+```
+
+
