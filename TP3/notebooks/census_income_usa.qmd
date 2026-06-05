@@ -133,7 +133,7 @@ adult_model <- adult |>
 ```
 
 ```{r}
-# Categorías de referencia
+# Categorías de referencia;
 
 #Codigo fija  de forma explícita las categorías de referencia para cada predictor categórico,
 # elegidas según la narrativa del trabajo. El perfil de referencia es una persona:
@@ -191,6 +191,82 @@ glimpse(adult_model)
 ```
 
 ```{r}
+# 1. Análisis exploratorio/Distribuciones bivariadas 
+
+#Comparan las distribuciones de las variables continuas segun el nivel de ingreso
+p_age <- adult_model |> 
+  ggplot(aes(x = age, fill = income, color = income)) +
+  geom_density(alpha = 0.4) +
+  scale_fill_manual(values = paleta_income) +
+  scale_color_manual(values = paleta_income) +
+  labs(
+    title = "Distribución de edad según nivel de ingreso",
+    x = "Edad", y = "Densidad"
+  ) +
+  theme_minimal()
+p_hours <- adult_model |> 
+  ggplot(aes(x = hours_per_week, fill = income, color = income)) +
+  geom_density(alpha = 0.4) +
+  scale_fill_manual(values = paleta_income) +
+  scale_color_manual(values = paleta_income) +
+  labs(
+    title = "Horas trabajadas por semana según ingreso",
+    x = "Horas semanales", y = "Densidad"
+  ) +
+  theme_minimal()
+p_age | p_hours
+```
+
+```{r}
+#Representa, mediante barras apiladas al 100 %, proporcion de cada categorua
+# que pertenece a cada nivel de ingreso.
+
+p_edu <- adult_model |> 
+  ggplot(aes(x = education_group, fill = income)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = paleta_income) +
+  scale_y_continuous(labels = label_percent()) +
+  labs(title = "Ingreso por nivel educativo", x = NULL, y = "Proporción") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1))
+
+p_sex <- adult_model |> 
+  ggplot(aes(x = sex, fill = income)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = paleta_income) +
+  scale_y_continuous(labels = label_percent()) +
+  labs(title = "Ingreso por sexo", x = NULL, y = "Proporción") +
+  theme_minimal()
+
+p_occ <- adult_model |> 
+  ggplot(aes(x = occupation_group, fill = income)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = paleta_income) +
+  scale_y_continuous(labels = label_percent()) +
+  labs(title = "Ingreso por grupo ocupacional", x = NULL, y = "Proporción") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1))
+
+p_marital <- adult_model |> 
+  ggplot(aes(x = marital_simple, fill = income)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = paleta_income) +
+  scale_y_continuous(labels = label_percent()) +
+  labs(title = "Ingreso por estado civil", x = NULL, y = "Proporción") +
+  theme_minimal()
+
+# Se combinan los cuatro gráficos categóricos con patchwork.
+(p_edu | p_sex) / (p_occ | p_marital)
+```
+
+```{r}
+# Sovbre las distribuciones dadas: 
+
+#La pertenencia al estrato de altos ingresos no depende de un único factor.  La educación muestra una asociación fuerte y monotónica con la probabilidad de superar los 50.000 dólares. 
+
+# El sexo evidencia una brecha visible a favor de los varones. Las horas semanales se desplazan hacia valores más altos entre quienes tienen ingresos altos. La ocupación profesional/gerencial y el estado civ "casado" se asocian a mayores proporciones de altos ingresos.
+
+#Variables de capital, en cambio, presentan una concentración extrema en cero, dando pie a justidicar tratamiento mediante `log1p()`.
 
 ```
 
@@ -201,5 +277,7 @@ glimpse(adult_model)
 ```{r}
 
 ```
+
+\
 
 \
