@@ -315,7 +315,143 @@ adult_model |>
 ```
 
 ```{r}
+# 2. Ajuste de modelos (regresión logística)
+# A continuación se estiman dos modelos con `glm(family = binomial)`. Las categorías de referencia fijadas (sexo Female, estado civil Not married, educación HS or less, sector Private, ocupación Manual/Operational, origen US y raza White) definen el perfil contra el cual se interpreta cada coeficiente.
 
+# Modelo 1 (Base): regresión logística estándar, sin términos de interacción.
+modelo_base <- glm(
+  income ~ age +
+    sex +
+    marital_simple +
+    education_group +
+    workclass_group +
+    occupation_group +
+    hours_per_week +
+    log_capital_gain +
+    log_capital_loss +
+    native_us +
+    race,
+  family = binomial,
+  data = adult_model
+)
+
+# Modelo 2 (Interactivo): conserva los mismos predictores y añade la interacción
+# sexo x educación. La notación sex * education_group incluye automáticamente ambos
+# efectos principales y todos sus términos de interacción.
+modelo_interactivo <- glm(
+  income ~ age +
+    sex * education_group +
+    marital_simple +
+    workclass_group +
+    occupation_group +
+    hours_per_week +
+    log_capital_gain +
+    log_capital_loss +
+    native_us +
+    race,
+  family = binomial,
+  data = adult_model
+)
+
+summary(modelo_base)
+summary(modelo_interactivo)
+
+# tabla comparativa de coeficientes con formato de publicación.
+modelsummary(
+  list(
+    "Modelo 1: Base"        = modelo_base,
+    "Modelo 2: Interactivo" = modelo_interactivo
+  ),
+  exponentiate = FALSE,            # Coeficientes en log-odds
+  statistic = "({std.error})",     # Error estándar entre paréntesis
+  stars = TRUE                     # Marcas de significatividad
+)
+```
+
+El Modelo 1 estima las asociaciones promedio entre los predictores y la probabilidad de pertenecer al grupo de altos ingresos, asumiendo que el efecto de la educación es idéntico para ambos sexos. El Modelo 2conserva la misma estructura, pero permite que el efecto de la educación varíe según el sexo. La comparación entre ambos permite evaluar si la interacción agrega información sustantiva y estadísticamente relevante.
+
+```{r}
+#3:
+# Calculé los Efectos Marginales Promedio (AME) del modelo interactivo. Un  AME
+# expresa el cambio promedio en la probabilidad de pertenecer a ">50K" ante un cambio
+# unitario del predictor (piensese como: el contraste respecto de la categoría de referencia).
+ame_modelo2 <- avg_slopes(modelo_interactivo)
+# Construye la tabla en puntos porcentuales
+```
+
+```{tabla_ame <- ame_modelo2 |>}
+  as_tibble() |> 
+  mutate(
+    estimate_pct  = estimate  * 100,
+    conf_low_pct  = conf.low  * 100,
+    conf_high_pct = conf.high * 100
+  ) |> 
+  select(term, contrast, estimate_pct, conf_low_pct, conf_high_pct, p.value)
+# Se identifican las filas estadísticamente significativas para resaltarlas en la tabla.
+filas_sig <- which(tabla_ame$p.value < 0.05)
+tabla_ame |> 
+  knitr::kable(
+    digits = 3,
+    col.names = c("Predictor", "Contraste", "AME (p.p.)",
+                  "IC inf. (p.p.)", "IC sup. (p.p.)", "Valor p"),
+    caption = "Efectos Marginales Promedio del Modelo Interactivo (en puntos porcentuales)"
+  ) |> 
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    full_width = FALSE
+  ) |> 
+  row_spec(filas_sig, bold = TRUE, color = "black", background = "#e6f2ff")
+```
+
+```{r}
+# Graficar de Odds Ratios
+
+# Calcula Odds Ratios a tres niveles de confianza. tidy(exponentiate = TRUE)
+or_80 <- tidy(modelo_interactivo, exponentiate = TRUE, conf.int = TRUE, conf.level = 0.80) |> 
+  mutate(conf_level = "80%")
+or_95 <- tidy(modelo_interactivo, exponentiate = TRUE, conf.int = TRUE, conf.level = 0.95) |> 
+  mutate(conf_level = "95%")
+or_99 <- tidy(modelo_interactivo, exponentiate = TRUE, conf.int = TRUE, conf.level = 0.99) |> 
+  mutate(conf_level = "99%")
+# Se apilan los tres niveles. El 99 % se ubica primero para que quede dibujado por debajo
+# y las barras más anchas (80 %) queden encima, produciendo el efecto graduado de grosor.
+or_plot <- bind_rows(or_99, or_95, or_80) |> 
+  filter(term != "(Intercept)") |> 
+  mutate(conf_level = factor(conf_level, levels = c("80%", "95%", "99%")))
+# Se grafica el bosque de Odds Ratios en escala logarítmica, con grosor de barra
+# decreciente según el nivel de confianza.
+ggplot(or_plot, aes(x = estimate, y = fct_reorder(term, estimate))) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "gray40") +
+  geom_errorbarh(
+    aes(xmin = conf.low, xmax = conf.high, linewidth = conf_level),
+    height = 0
+  ) +
+  geom_point(size = 2.2, color = "#B2182B") +
+  scale_linewidth_manual(
+    values = c("80%" = 2.2, "95%" = 1.2, "99%" = 0.5),
+    name = "Nivel de confianza"
+  ) +
+  scale_x_log10() +
+  labs(
+    title = "Odds Ratios del Modelo Interactivo",
+    subtitle = "Intervalos de confianza al 80 %, 95 % y 99 % (grosor decreciente)",
+    x = "Odds Ratio (escala logarítmica)",
+    y = "Predictor"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+```{r}
+# En los Odds Ratio, un valor mayor a 1 indica un aumento de las chances de pertenecer al grupo `>50K`, mientras que un valor menor a 1 indica una reducción, respecto de la categoría de referencia o ante un aumento unitario del predictor. 
+
+#La escala logarítmica del eje hace que duplicar las chances (OR = 2) quede visualmente a la misma distancia que reducirlas a la mitad (OR = 0,5). En los AMEel coeficiente se interpreta directamente como cambio promedio en la probabilidad; multiplicado por 100.
+
+# Interpretación": La educación es el predictor más potente; alcanzar el nivel Graduate/Professional multiplica varias veces las chances de superar los 50.000 dólares y eleva la probabilidad en una magnitud considerable respecto de "secundaria o menos".
+
+ #Estar casado, trabajar más horas y desempeñar ocupaciones profesionales/gerenciales también incrementa de forma significativa tal probabilidad. 
+
+# Respecto de la interacción, los términos `sexMale:education_group...` indica en qué medida el retorno educativo difiere entre varones y mujeres: si resultan significativos y se ubican por encima de 1, el premio de cada credencial educativa es mayor para los varones que para las mujeres, lo que confirma que el efecto de la educación no es homogéneo entre sexos.
 ```
 
 \
