@@ -4,15 +4,18 @@ format: html
 editor: visual
 ---
 
+# INTRODUCCIÓN.
+
+El presente trabajo busca aplicar regresión logística binomial para modelar la probabilidad dada d que un individuo perciba ingresos anuales superiores a los 50000 dólares (`>50K`), sobre la base de una serie de predictores sociodemográficos y laborales del Adult Census Income de los Estados Unidos.
+
+Se pretende un alcance de tipo descriptivo-explicativo ya que el interés no recae en predecir sobre datos nuevos; sino en caracterizar qué factores parecieran determinar la pertenencia al estrato de altos ingresos. Por eso no se desarrolla un esquema/modelo train-test,
+
 ```{r}
 
 # "Regresión logística sobre ingresos altos - Adult Census USA"
 # Por: "Mariano Ripoll Vast"
 
-# INTRODUCCIÓN.
-#El presente trabajo busca aplicar **regresión logística binomial** para modelar la probabilidad dada d que un individuo perciba ingresos anuales superiores a los 50000 dólares (`>50K`), sobre la base de una serie de predictores sociodemográficos y laborales del Adult Census Income de los Estados Unidos.
-  
-#Se pretende un alcance de tipo descriptivo-explicativo ya que el interés no recae en predecir sobre datos nuevos; sino en caracterizar qué factores parecieran determinar la pertenencia al estrato de altos ingresos. Por eso no se desarrolla un esquema/modelo train-test,
+
   
   
 ## Librerías necesarias
@@ -73,10 +76,9 @@ adult |>
     full_width = FALSE
   )
 
-
-# La variable objetivo se encuentra relativamente bien balanceada: aproximadamente el 52 % de las observaciones corresponde a ingresos bajos (`<=50K`) y el 48 % a ingresos altos (`>50K`). Al no existir una asimetría extrema entre clases, no parece menester que se aplican procedimientos de remuestreo y el análisis puede concentrarse en la interpretación del modelo.
-
 ```
+
+kLa variable objetivo se encuentra relativamente bien balanceada: aproximadamente el 52 % de las observaciones corresponde a ingresos bajos (`<=50K`) y el 48 % a ingresos altos (`>50K`). Al no existir una asimetría extrema entre clases, no parece menester que se aplican procedimientos de remuestreo y el análisis puede concentrarse en la interpretación del modelo.
 
 ```{r}
 # "Recodificación" de predictores
@@ -185,10 +187,11 @@ adult_model <- adult_model |>
 # Se inspecciona la estructura del dataset analítico resultante.
 glimpse(adult_model)
 
-#Justificación de la selección: piensese que el modelo combina tres dimensiones. Educación y ocupación capturan diferencias de calificación y segmentación laboral (capital humano e inserción laboral). Hras semanales y rentas de capital aproximan la intensidad del trabajo y las fuentes complementarias de ingreso. Sexo, estado civil, raza y origen permitirían controlar desigualdades sociodemográficas estructurales. 
-
-# NOTESE QUÉ: Se excluyen `education_num` por ser redundante con `education_group`, y `relationship` por su fuerte colinealidad con sexo y estado civil.
 ```
+
+Justificación de la selección: piensese que el modelo combina tres dimensiones. Educación y ocupación capturan diferencias de calificación y segmentación laboral (capital humano e inserción laboral). Hras semanales y rentas de capital aproximan la intensidad del trabajo y las fuentes complementarias de ingreso. Sexo, estado civil, raza y origen permitirían controlar desigualdades sociodemográficas estructurales.
+
+NOTESE QUÉ: Se excluyen `education_num` por ser redundante con `education_group`, y `relationship` por su fuerte colinealidad con sexo y estado civil.
 
 ```{r}
 # 1. Análisis exploratorio/Distribuciones bivariadas 
@@ -259,16 +262,13 @@ p_marital <- adult_model |>
 (p_edu | p_sex) / (p_occ | p_marital)
 ```
 
-```{r}
-# Sovbre las distribuciones dadas: 
+Sovbre las distribuciones dadas:
 
-#La pertenencia al estrato de altos ingresos no depende de un único factor.  La educación muestra una asociación fuerte y monotónica con la probabilidad de superar los 50.000 dólares. 
+La pertenencia al estrato de altos ingresos no depende de un único factor. La educación muestra una asociación fuerte y monotónica con la probabilidad de superar los 50.000 dólares.
 
-# El sexo evidencia una brecha visible a favor de los varones. Las horas semanales se desplazan hacia valores más altos entre quienes tienen ingresos altos. La ocupación profesional/gerencial y el estado civ "casado" se asocian a mayores proporciones de altos ingresos.
+El sexo evidencia una brecha visible a favor de los varones. Las horas semanales se desplazan hacia valores más altos entre quienes tienen ingresos altos. La ocupación profesional/gerencial y el estado civ "casado" se asocian a mayores proporciones de altos ingresos.
 
-#Variables de capital, en cambio, presentan una concentración extrema en cero, dando pie a justidicar tratamiento mediante `log1p()`.
-
-```
+Variables de capital, en cambio, presentan una concentración extrema en cero, dando pie a justidicar tratamiento mediante `log1p()`.
 
 ```{r}
 #Transformación e interacción
@@ -309,10 +309,10 @@ adult_model |>
   theme(axis.text.x = element_text(angle = 20, hjust = 1))
 
 
-#Justificación teórica de la interaccion:
-# La interacción entre educación y sexo permite evaluar si el rendimiento económico de la educación es homogéneo entre varones y mujeres Teóricamente esto es relevante porque el mercado laboral puede premiar las credenciales educativas de manera desigual según el género, por la: segmentación ocupacional, diferencias en las trayectorias laborales, la discriminación o a la composición sectorial del empleo. Por ello, el modelo interactivo no pregunta únicamente si la educación aumenta la probabilidad de ingresos altos, sino que sebusca ver si ese aumento esta con la misma intensidad para varones y mujeres. El gráfico permite anticipar si las pendientes por nivel educativo difieren entre paneles.
 
 ```
+
+Justificación teórica de la interaccion: \# La interacción entre educación y sexo permite evaluar si el rendimiento económico de la educación es homogéneo entre varones y mujeres Teóricamente esto es relevante porque el mercado laboral puede premiar las credenciales educativas de manera desigual según el género, por la: segmentación ocupacional, diferencias en las trayectorias laborales, la discriminación o a la composición sectorial del empleo. Por ello, el modelo interactivo no pregunta únicamente si la educación aumenta la probabilidad de ingresos altos, sino que sebusca ver si ese aumento esta con la misma intensidad para varones y mujeres. El gráfico permite anticipar si las pendientes por nivel educativo difieren entre paneles.
 
 ```{r}
 # 2. Ajuste de modelos (regresión logística)
@@ -377,9 +377,7 @@ El Modelo 1 estima las asociaciones promedio entre los predictores y la probabil
 # unitario del predictor (piensese como: el contraste respecto de la categoría de referencia).
 ame_modelo2 <- avg_slopes(modelo_interactivo)
 # Construye la tabla en puntos porcentuales
-```
-
-```{tabla_ame <- ame_modelo2 |>}
+tabla_ame <- ame_modelo2 |> 
   as_tibble() |> 
   mutate(
     estimate_pct  = estimate  * 100,
@@ -442,17 +440,51 @@ ggplot(or_plot, aes(x = estimate, y = fct_reorder(term, estimate))) +
   theme(plot.title = element_text(face = "bold"))
 ```
 
+En los Odds Ratio, un valor mayor a 1 indica un aumento de las chances de pertenecer al grupo `>50K`, mientras que un valor menor a 1 indica una reducción, respecto de la categoría de referencia o ante un aumento unitario del predictor.
+
+La escala logarítmica del eje hace que duplicar las chances (OR = 2) quede visualmente a la misma distancia que reducirlas a la mitad (OR = 0,5). En los AMEel coeficiente se interpreta directamente como cambio promedio en la probabilidad; multiplicado por 100.
+
+Interpretación": La educación es el predictor más potente; alcanzar el nivel Graduate/Professional multiplica varias veces las chances de superar los 50.000 dólares y eleva la probabilidad en una magnitud considerable respecto de "secundaria o menos".
+
+Estar casado, trabajar más horas y desempeñar ocupaciones profesionales/gerenciales también incrementa de forma significativa tal probabilidad.
+
+Respecto de la interacción, los términos `sexMale:education_group...` indica en qué medida el retorno educativo difiere entre varones y mujeres: si resultan significativos y se ubican por encima de 1, el premio de cada credencial educativa es mayor para los varones que para las mujeres, lo que confirma que el efecto de la educación no es homogéneo entre sexos.
+
 ```{r}
-# En los Odds Ratio, un valor mayor a 1 indica un aumento de las chances de pertenecer al grupo `>50K`, mientras que un valor menor a 1 indica una reducción, respecto de la categoría de referencia o ante un aumento unitario del predictor. 
+# 4. Comparación modelos
+# a partir de las deviances como 1 - (deviance residual / deviance nula).
+comparacion_modelos <- bind_rows(
+  glance(modelo_base)        |> mutate(Modelo = "Modelo 1: Base"),
+  glance(modelo_interactivo) |> mutate(Modelo = "Modelo 2: Interactivo")
+) |> 
+  mutate(
+    pseudo_r2 = 1 - (deviance / null.deviance)
+  ) |> 
+  select(Modelo, null.deviance, deviance, pseudo_r2, AIC, BIC, nobs)
+comparacion_modelos |> 
+  knitr::kable(
+    digits = 3,
+    col.names = c("Modelo", "Deviance nula", "Deviance residual",
+                  "Pseudo-R² (McFadden)", "AIC", "BIC", "N"),
+    caption = "Comparación global de modelos logísticos"
+  ) |> 
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    full_width = FALSE
+  ) |> 
+  # Se resalta automáticamente la fila del modelo con menor AIC.
+  row_spec(which.min(comparacion_modelos$AIC), bold = TRUE, background = "lightblue")
 
-#La escala logarítmica del eje hace que duplicar las chances (OR = 2) quede visualmente a la misma distancia que reducirlas a la mitad (OR = 0,5). En los AMEel coeficiente se interpreta directamente como cambio promedio en la probabilidad; multiplicado por 100.
-
-# Interpretación": La educación es el predictor más potente; alcanzar el nivel Graduate/Professional multiplica varias veces las chances de superar los 50.000 dólares y eleva la probabilidad en una magnitud considerable respecto de "secundaria o menos".
-
- #Estar casado, trabajar más horas y desempeñar ocupaciones profesionales/gerenciales también incrementa de forma significativa tal probabilidad. 
-
-# Respecto de la interacción, los términos `sexMale:education_group...` indica en qué medida el retorno educativo difiere entre varones y mujeres: si resultan significativos y se ubican por encima de 1, el premio de cada credencial educativa es mayor para los varones que para las mujeres, lo que confirma que el efecto de la educación no es homogéneo entre sexos.
+# Se contrasta formalmente si la interacción aporta, comparando el modelo base
+# (anidado) contra el interactivo mediante un test de razón de verosimilitud.
+anova(modelo_base, modelo_interactivo, test = "LRT")
 ```
+
+La inclusión de la interacción no mejora\*\* el modelo. Si bien el Modelo 2 reduce levemente la deviance residual (de 13107,4 a 13102,8), esa caída de apenas 4,56 puntos se obtiene a costa de tres parámetros adicionales y no resulta estadísticamente significativa (test de razón de verosimilitud: Δdeviance es aproc 4,56 con 3 g.l., p valor de aproximadamente 0,21). En consecuencia, el pseudo-R² de McFadden permanece prácticamente idéntico (0,399 en ambos modelos), el AIC es incluso algo menor en el Modelo 1 (13147,4 vs 13148,8) y el BIC —que penaliza con mayor fuerza la complejidad— favorece de forma clara al modelo base (13300,7 frente a 13325,1). Por lo tanto, aunque el análisis exploratorio sugería una posible interacción entre educación y sexo, esta no aporta información sustantiva una vez controlados el resto de los predictores; debería de preferirse el modelo 1.
+
+El análisis confirma que la pertenencia al estrato de altos ingresos en los Estados Unidos responde a una combinación de capital humano, inserción laboral y posición sociodemográfica, antes que a un único factor. La educación emerge como el determinante más fuerte, con un retorno creciente y monotónico a lo largo de los niveles de credencial. La intensidad laboral (horas semanales), las ocupaciones profesionales/gerenciales y las rentas de capital operan en el mismo sentido, mientras que el estado civil "casado" se asocia de manera robusta a mayores ingresos. Persisten, además, brechas sociodemográficas relevantes: el sexo masculino y el origen nativo se vinculan a mayores probabilidades de altos ingresos, aun controlando por educación y ocupación.
+
+Respecto de la interacción educación × sexo, el análisis exploratorio había sugerido que el retorno de las credenciales podía diferir entre varones y mujeres. Sin embargo, al incorporarla en el Modelo 2, dicha interacción no resultó estadísticamente significativa ni mejoró el ajuste global: el AIC y el BIC favorecieron al modelo base y el pseudo-R² de McFadden permaneció inalterado. En consecuencia, una vez controlado el resto de los predictores, el premio educativo puede considerarse relativamente homogéneo entre sexos. En conjunto, se prefiere el Modelo 1 ( por parsimonia: la estructura de la desigualdad de ingresos queda caracterizada por el peso dominante de la educación y la ocupación, junto con brechas sociodemográficas persistentes de género y origen, sin que la interacción aporte poder explicativo adicional.
 
 \
 
