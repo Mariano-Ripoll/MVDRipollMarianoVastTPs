@@ -1,7 +1,22 @@
 ---
-title: "census_income_usa"
-format: html
-editor: visual
+title: "Regresión logística sobre ingresos altos en Adult Census USA"
+author: "Mariano Ripoll Vast"
+date: "`r Sys.Date()`"
+lang: es
+execute:
+  echo: true
+  warning: false
+  message: false
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-title: "Contenidos"
+    theme: cosmo
+    code-fold: false
+    code-tools: true
+    df-print: paged
+    embed-resources: true
 ---
 
 # INTRODUCCIÓN.
@@ -480,11 +495,13 @@ comparacion_modelos |>
 anova(modelo_base, modelo_interactivo, test = "LRT")
 ```
 
-La inclusión de la interacción no mejora\*\* el modelo. Si bien el Modelo 2 reduce levemente la deviance residual (de 13107,4 a 13102,8), esa caída de apenas 4,56 puntos se obtiene a costa de tres parámetros adicionales y no resulta estadísticamente significativa (test de razón de verosimilitud: Δdeviance es aproc 4,56 con 3 g.l., p valor de aproximadamente 0,21). En consecuencia, el pseudo-R² de McFadden permanece prácticamente idéntico (0,399 en ambos modelos), el AIC es incluso algo menor en el Modelo 1 (13147,4 vs 13148,8) y el BIC —que penaliza con mayor fuerza la complejidad— favorece de forma clara al modelo base (13300,7 frente a 13325,1). Por lo tanto, aunque el análisis exploratorio sugería una posible interacción entre educación y sexo, esta no aporta información sustantiva una vez controlados el resto de los predictores; debería de preferirse el modelo 1.
+La inclusión de la interacción no mejora el modelo. Si bien el Modelo 2 reduce levemente la deviance residual (de 13107,4 a 13102,8), esa caída de apenas 4,56 puntos se obtiene a costa de tres parámetros adicionales y no resulta estadísticamente significativa (test de razón de verosimilitud: Δdeviance es aproc 4,56 con 3 g.l., p valor de aproximadamente 0,21). En consecuencia, el pseudo-R² de McFadden permanece prácticamente idéntico (0,399 en ambos modelos), el AIC es incluso algo menor en el Modelo 1 (13147,4 vs 13148,8) y el BIC penaliza con mayor fuerza la complejidad favorece de forma clara ael modelo base (13300,7 frente a 13325,1). Por lo tanto, aunque el análisis exploratorio sugería una posible interacción entre educación y sexo, esta no aporta información sustantiva una vez controlados el resto de los predictores; debería de preferirse el modelo 1.
 
 El análisis confirma que la pertenencia al estrato de altos ingresos en los Estados Unidos responde a una combinación de capital humano, inserción laboral y posición sociodemográfica, antes que a un único factor. La educación emerge como el determinante más fuerte, con un retorno creciente y monotónico a lo largo de los niveles de credencial. La intensidad laboral (horas semanales), las ocupaciones profesionales/gerenciales y las rentas de capital operan en el mismo sentido, mientras que el estado civil "casado" se asocia de manera robusta a mayores ingresos. Persisten, además, brechas sociodemográficas relevantes: el sexo masculino y el origen nativo se vinculan a mayores probabilidades de altos ingresos, aun controlando por educación y ocupación.
 
-Respecto de la interacción educación × sexo, el análisis exploratorio había sugerido que el retorno de las credenciales podía diferir entre varones y mujeres. Sin embargo, al incorporarla en el Modelo 2, dicha interacción no resultó estadísticamente significativa ni mejoró el ajuste global: el AIC y el BIC favorecieron al modelo base y el pseudo-R² de McFadden permaneció inalterado. En consecuencia, una vez controlado el resto de los predictores, el premio educativo puede considerarse relativamente homogéneo entre sexos. En conjunto, se prefiere el Modelo 1 ( por parsimonia: la estructura de la desigualdad de ingresos queda caracterizada por el peso dominante de la educación y la ocupación, junto con brechas sociodemográficas persistentes de género y origen, sin que la interacción aporte poder explicativo adicional.
+Respecto de la interacción educación × sexo, el análisis exploratorio pareceria sugerir que el retorno de las credencials podía diferir entre varones y mujeres. Sin embargo, tal es el caso que al incorporarla en el Modelo 2, dicha interacción no resultó estadísticamente significativa ni mejoró el ajuste global: AIC y BIC favorecieron al modelo base y el pseudo-R² permaneció inalterado. Por eso, una vez controlados el resto de los predictores; el premio educativo puede considerarse relativamente homogéneo entre sexos. \
+\
+Entonces, en conjunto, se prefiere el Modelo 1 ( por parsimonia: la estructura de la desigualdad de ingresos queda caracterizada por el peso dominante de la educación y la ocupación, junto con brechas sociodemográficas persistentes de género y origen, sin que la interacción aporte poder explicativo adicional.
 
 \
 
