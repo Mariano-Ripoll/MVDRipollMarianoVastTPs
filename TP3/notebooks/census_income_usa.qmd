@@ -271,6 +271,46 @@ p_marital <- adult_model |>
 ```
 
 ```{r}
+#Transformación e interacción
+
+# Se transforman `capital_gain` y `capital_loss` mediante `log1p()` porque  tiemen  una distribución muy asimétrica, con gran masa de valores en cero (aprox 88% y 94%, respectivamente) y pocos valores extremadamente altos. La transformación `log1p(x) = log(x + 1)` comprime la cola derecha; reduciendo la influencia de valores extremos sin descartar las observaciones con valor cero(al evitar la discontinuidad de `log(0).
+
+#Contrasta la distribución de capital_gain en su escala original frente a la
+# transformada con log1p(), para visualizar el efecto sobre la asimetría.
+p_cg_raw <- adult |> 
+  ggplot(aes(x = capital_gain)) +
+  geom_histogram(bins = 50, fill = "#2166AC") +
+  labs(title = "capital_gain (escala original)",
+       x = "Ganancia de capital", y = "Frecuencia") +
+  theme_minimal()
+p_cg_log <- adult |> 
+  ggplot(aes(x = log1p(capital_gain))) +
+  geom_histogram(bins = 50, fill = "#B2182B") +
+  labs(title = "log1p(capital_gain)",
+       x = "log1p(ganancia de capital)", y = "Frecuencia") +
+  theme_minimal()
+p_cg_raw | p_cg_log
+
+
+# Ealúa visualmente la interacción educación x sexo:  grafica la proporción de
+# altos ingresos por nivel educativo, separando los paneles según sexo.
+adult_model |> 
+  ggplot(aes(x = education_group, fill = income)) +
+  geom_bar(position = "fill") +
+  facet_wrap(~ sex) +
+  scale_fill_manual(values = paleta_income) +
+  scale_y_continuous(labels = label_percent()) +
+  labs(
+    title = "Ingreso por educación, separado por sexo",
+    subtitle = "Evaluación visual de una posible interacción entre educación y sexo",
+    x = "Nivel educativo", y = "Proporción"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1))
+
+
+#Justificación teórica de la interaccion:
+# La interacción entre educación y sexo permite evaluar si el rendimiento económico de la educación es homogéneo entre varones y mujeres Teóricamente esto es relevante porque el mercado laboral puede premiar las credenciales educativas de manera desigual según el género, por la: segmentación ocupacional, diferencias en las trayectorias laborales, la discriminación o a la composición sectorial del empleo. Por ello, el modelo interactivo no pregunta únicamente si la educación aumenta la probabilidad de ingresos altos, sino que sebusca ver si ese aumento esta con la misma intensidad para varones y mujeres. El gráfico permite anticipar si las pendientes por nivel educativo difieren entre paneles.
 
 ```
 
